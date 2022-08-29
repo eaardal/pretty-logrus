@@ -3,7 +3,8 @@ module github.com/eaardal/pretty-logrus
 go 1.19
 
 // replace github.com/y/original-project => /path/to/x/my-version
-replace pretty-logrus => ./
+// replace pretty-logrus => ./
+// replace pretty-logrus => github.com/eaardal/pretty-logrus@latest
 
 require (
 	github.com/fatih/color v1.13.0
