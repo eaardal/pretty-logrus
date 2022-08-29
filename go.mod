@@ -2,6 +2,9 @@ module github.com/eaardal/pretty-logrus
 
 go 1.19
 
+// replace github.com/y/original-project => /path/to/x/my-version
+replace pretty-logrus => ./
+
 require (
 	github.com/fatih/color v1.13.0
 	github.com/sirupsen/logrus v1.9.0
