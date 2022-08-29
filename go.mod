@@ -1,4 +1,4 @@
-module pretty-logrus
+module github.com/eaardal/pretty-logrus
 
 go 1.19
 
