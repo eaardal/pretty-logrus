@@ -15,4 +15,7 @@ kubectl logs <pod> | plr
 ```
 
 Options:
-- To print each log message on only one line, use the `-oneline` flag.
+- `--multi-line`: Print output on multiple lines with log message and level first and then each field/data-entry on separate lines
+- `--no-data`: Don't show logged data fields (additional key-value pairs of arbitrary data)
+- `--level=<level>`: Only show log messages with matching level. Values: trace | debug | info | warning | error | fatal | panic
+- `--field=<field>`: Only show this specific data field

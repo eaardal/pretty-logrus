@@ -19,7 +19,7 @@ var green = color.GreenString
 var white = color.WhiteString
 var red = color.RedString
 
-var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines (default: false)")
+var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines")
 var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
 var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values: trace|debug|info|warning|error|fatal|panic")
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
