@@ -17,8 +17,12 @@ var blue = color.BlueString
 var yellow = color.YellowString
 var green = color.GreenString
 var white = color.WhiteString
+var red = color.RedString
 
-var oneLine = flag.Bool("oneline", false, "Print output on one line (default: false)")
+var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines (default: false)")
+var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
+var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values: trace|debug|info|warning|error|fatal|panic")
+var fieldFilter = flag.String("field", "", "Only show this specific data field")
 
 type LogEntry struct {
 	OriginalJson []byte
@@ -86,7 +90,14 @@ func readStdin() {
 		}
 
 		logEntry.FromMap(logMap)
-		logEntries = append(logEntries, logEntry)
+
+		if levelFilter != nil && *levelFilter != "" {
+			if *levelFilter == logEntry.Level {
+				logEntries = append(logEntries, logEntry)
+			}
+		} else {
+			logEntries = append(logEntries, logEntry)
+		}
 
 		line, isPrefix, err = reader.ReadLine()
 		lineCount++
@@ -97,32 +108,67 @@ func readStdin() {
 
 func printLogEntries(logEntries []LogEntry) {
 	for _, logEntry := range logEntries {
-		if oneLine != nil && *oneLine {
-			printSingleLine(&logEntry)
-		} else {
+		if multiLine != nil && *multiLine {
 			printMultiLine(&logEntry)
+		} else {
+			printSingleLine(&logEntry)
 		}
 	}
 }
 
 func printMultiLine(logEntry *LogEntry) {
-	fmt.Printf("[%s] %s - %s\n", cyan(logEntry.Level), blue(logEntry.Time), white(logEntry.Message))
-	for fieldName, fieldValue := range logEntry.Fields {
-		fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+
+	if noData == nil || *noData == false {
+		for fieldName, fieldValue := range logEntry.Fields {
+			if fieldFilter != nil && *fieldFilter != "" {
+				if *fieldFilter == fieldName {
+					fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+				}
+			} else {
+				fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+			}
+		}
 	}
 }
 
 func printSingleLine(logEntry *LogEntry) {
 	fields := ""
 
-	for fieldName, fieldValue := range logEntry.Fields {
-		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
-		if fields == "" {
-			fields = field
-		} else {
-			fields = fmt.Sprintf("%s, %s", fields, field)
+	if noData == nil || *noData == false {
+		for fieldName, fieldValue := range logEntry.Fields {
+			if fieldFilter != nil && *fieldFilter != "" {
+				if *fieldFilter == fieldName {
+					field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
+					if fields == "" {
+						fields = field
+					} else {
+						fields = fmt.Sprintf("%s, %s", fields, field)
+					}
+				}
+			} else {
+				field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
+				if fields == "" {
+					fields = field
+				} else {
+					fields = fmt.Sprintf("%s, %s", fields, field)
+				}
+			}
 		}
-	}
 
-	fmt.Printf("[%s] %s - %s - %s\n", cyan(logEntry.Level), blue(logEntry.Time), white(logEntry.Message), fields)
+		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
+	} else {
+		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+	}
+}
+
+func formatLevel(entry *LogEntry) string {
+	level := cyan(entry.Level)
+	if entry.Level == "warning" {
+		level = yellow(entry.Level)
+	}
+	if entry.Level == "error" || entry.Level == "fatal" {
+		level = red(entry.Level)
+	}
+	return level
 }
