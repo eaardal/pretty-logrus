@@ -21,10 +21,10 @@ var red = color.RedString
 
 var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines")
 var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
-var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values: trace|debug|info|warning|error|fatal|panic")
+var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values (logrus levels): trace|debug|info|warning|error|fatal|panic")
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
-var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields (separated by comma)")
+var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
 
 var includeFields map[string]struct{}
 var excludeFields map[string]struct{}
@@ -140,31 +140,11 @@ func printLogEntries(logEntries []LogEntry) {
 	}
 }
 
-func printMultiLine(logEntry *LogEntry) {
-	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
-
-	if noData == nil || *noData == false {
-		for fieldName, fieldValue := range logEntry.Fields {
-			if len(includeFields) > 0 {
-				if _, included := includeFields[fieldName]; included {
-					printMultiLineField(fieldName, fieldValue)
-				}
-			} else if len(excludeFields) > 0 {
-				if _, excluded := excludeFields[fieldName]; !excluded {
-					printMultiLineField(fieldName, fieldValue)
-				}
-			} else {
-				printMultiLineField(fieldName, fieldValue)
-			}
-		}
-	}
-}
-
 func printSingleLine(logEntry *LogEntry) {
 	fields := ""
 
 	addField := func(fieldName, fieldValue string) {
-		field := formatSingleLineField(fieldName, fieldValue)
+		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
 		if fields == "" {
 			fields = field
 		} else {
@@ -186,24 +166,48 @@ func printSingleLine(logEntry *LogEntry) {
 				addField(fieldName, fieldValue)
 			}
 		}
+	}
 
-		if len(fields) > 0 {
-			fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
-		} else {
-			fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
-		}
-
+	if len(fields) > 0 {
+		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
 	} else {
 		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
 	}
 }
 
-func printMultiLineField(fieldName, fieldValue string) {
-	fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
-}
+func printMultiLine(logEntry *LogEntry) {
+	fields := ""
 
-func formatSingleLineField(fieldName, fieldValue string) string {
-	return fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
+	addField := func(fieldName, fieldValue string) {
+		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+		if fields == "" {
+			fields = field
+		} else {
+			fields = fmt.Sprintf("%s\n%s", fields, field)
+		}
+	}
+
+	if noData == nil || *noData == false {
+		for fieldName, fieldValue := range logEntry.Fields {
+			if len(includeFields) > 0 {
+				if _, included := includeFields[fieldName]; included {
+					addField(fieldName, fieldValue)
+				}
+			} else if len(excludeFields) > 0 {
+				if _, excluded := excludeFields[fieldName]; !excluded {
+					addField(fieldName, fieldValue)
+				}
+			} else {
+				addField(fieldName, fieldValue)
+			}
+		}
+	}
+
+	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+
+	if len(fields) > 0 {
+		fmt.Println(fields)
+	}
 }
 
 func formatLevel(entry *LogEntry) string {
