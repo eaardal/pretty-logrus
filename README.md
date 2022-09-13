@@ -20,3 +20,4 @@ Options:
 - `--level=<level>`: Only show log messages with matching level. Values: trace | debug | info | warning | error | fatal | panic
 - `--field=<field>`: Only show this specific data field
 - `--fields=<field>,<field>`: Only show specific data fields separated by comma
+- `--except=<field>,<field>`: Don't show this particular field or fields separated by comma
