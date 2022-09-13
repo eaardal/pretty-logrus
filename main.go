@@ -24,8 +24,10 @@ var noData = flag.Bool("no-data", false, "Don't show data fields (additional key
 var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values: trace|debug|info|warning|error|fatal|panic")
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
+var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields (separated by comma)")
 
-var fieldsByName map[string]struct{}
+var includeFields map[string]struct{}
+var excludeFields map[string]struct{}
 
 type LogEntry struct {
 	OriginalJson []byte
@@ -69,12 +71,17 @@ func main() {
 
 func initFields() {
 	if fieldFilter != nil && *fieldFilter != "" {
-		fieldsByName = make(map[string]struct{})
-		fieldsByName[*fieldFilter] = struct{}{}
+		includeFields = make(map[string]struct{})
+		includeFields[*fieldFilter] = struct{}{}
 	} else if fieldsFilter != nil && *fieldsFilter != "" {
-		fieldsByName = make(map[string]struct{})
+		includeFields = make(map[string]struct{})
 		for _, f := range strings.Split(*fieldsFilter, ",") {
-			fieldsByName[f] = struct{}{}
+			includeFields[f] = struct{}{}
+		}
+	} else if exceptFieldsFilter != nil && *exceptFieldsFilter != "" {
+		excludeFields = make(map[string]struct{})
+		for _, f := range strings.Split(*exceptFieldsFilter, ",") {
+			excludeFields[f] = struct{}{}
 		}
 	}
 }
@@ -138,12 +145,16 @@ func printMultiLine(logEntry *LogEntry) {
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if len(fieldsByName) > 0 {
-				if _, ok := fieldsByName[fieldName]; ok {
-					fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+			if len(includeFields) > 0 {
+				if _, included := includeFields[fieldName]; included {
+					printMultiLineField(fieldName, fieldValue)
+				}
+			} else if len(excludeFields) > 0 {
+				if _, excluded := excludeFields[fieldName]; !excluded {
+					printMultiLineField(fieldName, fieldValue)
 				}
 			} else {
-				fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+				printMultiLineField(fieldName, fieldValue)
 			}
 		}
 	}
@@ -152,31 +163,47 @@ func printMultiLine(logEntry *LogEntry) {
 func printSingleLine(logEntry *LogEntry) {
 	fields := ""
 
+	addField := func(fieldName, fieldValue string) {
+		field := formatSingleLineField(fieldName, fieldValue)
+		if fields == "" {
+			fields = field
+		} else {
+			fields = fmt.Sprintf("%s, %s", fields, field)
+		}
+	}
+
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if len(fieldsByName) > 0 {
-				if _, ok := fieldsByName[fieldName]; ok {
-					field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
-					if fields == "" {
-						fields = field
-					} else {
-						fields = fmt.Sprintf("%s, %s", fields, field)
-					}
+			if len(includeFields) > 0 {
+				if _, included := includeFields[fieldName]; included {
+					addField(fieldName, fieldValue)
+				}
+			} else if len(excludeFields) > 0 {
+				if _, excluded := excludeFields[fieldName]; !excluded {
+					addField(fieldName, fieldValue)
 				}
 			} else {
-				field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
-				if fields == "" {
-					fields = field
-				} else {
-					fields = fmt.Sprintf("%s, %s", fields, field)
-				}
+				addField(fieldName, fieldValue)
 			}
 		}
 
-		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
+		if len(fields) > 0 {
+			fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
+		} else {
+			fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+		}
+
 	} else {
 		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
 	}
+}
+
+func printMultiLineField(fieldName, fieldValue string) {
+	fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+}
+
+func formatSingleLineField(fieldName, fieldValue string) string {
+	return fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
 }
 
 func formatLevel(entry *LogEntry) string {
