@@ -19,3 +19,4 @@ Options:
 - `--no-data`: Don't show logged data fields (additional key-value pairs of arbitrary data)
 - `--level=<level>`: Only show log messages with matching level. Values: trace | debug | info | warning | error | fatal | panic
 - `--field=<field>`: Only show this specific data field
+- `--fields=<field>,<field>`: Only show specific data fields separated by comma

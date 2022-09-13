@@ -23,6 +23,9 @@ var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines w
 var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
 var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values: trace|debug|info|warning|error|fatal|panic")
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
+var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
+
+var fieldsByName map[string]struct{}
 
 type LogEntry struct {
 	OriginalJson []byte
@@ -49,6 +52,8 @@ func (l *LogEntry) FromMap(logMap map[string]interface{}) {
 func main() {
 	flag.Parse()
 
+	initFields()
+
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
@@ -59,6 +64,18 @@ func main() {
 		readStdin()
 	} else {
 		log.Fatalf("Expected to find content from stdin. Example usage: kubectl logs <pod> | plr")
+	}
+}
+
+func initFields() {
+	if fieldFilter != nil && *fieldFilter != "" {
+		fieldsByName = make(map[string]struct{})
+		fieldsByName[*fieldFilter] = struct{}{}
+	} else if fieldsFilter != nil && *fieldsFilter != "" {
+		fieldsByName = make(map[string]struct{})
+		for _, f := range strings.Split(*fieldsFilter, ",") {
+			fieldsByName[f] = struct{}{}
+		}
 	}
 }
 
@@ -121,8 +138,8 @@ func printMultiLine(logEntry *LogEntry) {
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if fieldFilter != nil && *fieldFilter != "" {
-				if *fieldFilter == fieldName {
+			if len(fieldsByName) > 0 {
+				if _, ok := fieldsByName[fieldName]; ok {
 					fmt.Printf("  %s: %s\n", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
 				}
 			} else {
@@ -137,8 +154,8 @@ func printSingleLine(logEntry *LogEntry) {
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if fieldFilter != nil && *fieldFilter != "" {
-				if *fieldFilter == fieldName {
+			if len(fieldsByName) > 0 {
+				if _, ok := fieldsByName[fieldName]; ok {
 					field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
 					if fields == "" {
 						fields = field
