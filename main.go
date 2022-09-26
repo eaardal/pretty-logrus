@@ -25,7 +25,7 @@ var levelFilter = flag.String("level", "", "Only show log messages with matching
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
-var ecsCompatible = flag.Bool("ecs-enabled", false, "Expect log entry to be ECS formatted(log.level, message, @timestamp)")
+var ecsCompatible = flag.Bool("ecs", false, "Expect log entry to be ECS(Elastic Common Schema) formatted(log.level, message, @timestamp). ECS reference: https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html")
 
 var includeFields map[string]struct{}
 var excludeFields map[string]struct{}
@@ -52,13 +52,12 @@ func (l *LogEntry) FromMap(logMap map[string]interface{}) {
 			// look for error message
 			// - "error": "error message"
 			// - "error": { "message": "error message" } (ECS format)
-			switch value.(type) {
+			switch val := value.(type) {
 			case string:
-				l.Fields[key] = value.(string)
+				l.Fields[key] = val
 			case map[string]interface{}:
-				msg, ok := value.(map[string]interface{})["message"]
-				if ok {
-					l.Fields["error.message"] = msg.(string)
+				for errKey, errValue := range val {
+					l.Fields[key+"."+errKey] = errValue.(string)
 				}
 			}
 		} else if strings.ToLower(key) == keyTime {
