@@ -25,14 +25,22 @@ var levelFilter = flag.String("level", "", "Only show log messages with matching
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
-var ecsCompatible = flag.Bool("ecs", false, "Expect log entry to be ECS(Elastic Common Schema) formatted(log.level, message, @timestamp). ECS reference: https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html")
 
-var includeFields map[string]struct{}
-var excludeFields map[string]struct{}
+var includedFields map[string]struct{}
+var excludedFields map[string]struct{}
 
-var keyLevel = logrus.FieldKeyLevel
-var keyMessage = logrus.FieldKeyMsg
-var keyTime = logrus.FieldKeyTime
+// Elastic Common Schema (ECS) field names
+// https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html
+const (
+	ecsMessageField   = "message"
+	ecsLevelField     = "log.level"
+	ecsTimestampField = "@timestamp"
+)
+
+var messageKeywords = []string{logrus.FieldKeyMsg, ecsMessageField}
+var levelKeywords = []string{logrus.FieldKeyLevel, ecsLevelField}
+var timeKeywords = []string{logrus.FieldKeyTime, ecsTimestampField}
+var errorKeywords = []string{logrus.ErrorKey}
 
 type LogEntry struct {
 	OriginalJson []byte
@@ -44,25 +52,60 @@ type LogEntry struct {
 
 func (l *LogEntry) FromMap(logMap map[string]interface{}) {
 	for key, value := range logMap {
-		if strings.ToLower(key) == keyLevel {
-			l.Level = value.(string)
-		} else if strings.ToLower(key) == keyMessage {
-			l.Message = value.(string)
-		} else if strings.ToLower(key) == logrus.ErrorKey {
-			// look for error message
-			// - "error": "error message"
-			// - "error": { "message": "error message" } (ECS format)
-			switch val := value.(type) {
-			case string:
-				l.Fields[key] = val
-			case map[string]interface{}:
-				for errKey, errValue := range val {
-					l.Fields[key+"."+errKey] = errValue.(string)
-				}
+		match := false
+
+		for _, levelKeyword := range levelKeywords {
+			if strings.ToLower(key) == levelKeyword {
+				l.Level = value.(string)
+				match = true
+				break
 			}
-		} else if strings.ToLower(key) == keyTime {
-			l.Time = value.(string)
-		} else {
+		}
+
+		if match {
+			continue
+		}
+
+		for _, messageKeyword := range messageKeywords {
+			if strings.ToLower(key) == messageKeyword {
+				l.Message = value.(string)
+				match = true
+				break
+			}
+		}
+
+		if match {
+			continue
+		}
+
+		for _, timeKeyword := range timeKeywords {
+			if strings.ToLower(key) == timeKeyword {
+				l.Time = value.(string)
+				match = true
+				break
+			}
+		}
+
+		if match {
+			continue
+		}
+
+		for _, errorKeyword := range errorKeywords {
+			if strings.ToLower(key) == errorKeyword {
+				switch val := value.(type) {
+				case string:
+					l.Fields[key] = val
+				case map[string]interface{}:
+					for errKey, errValue := range val {
+						l.Fields[key+"."+errKey] = errValue.(string)
+					}
+				}
+				match = true
+				break
+			}
+		}
+
+		if !match {
 			l.Fields[key] = fmt.Sprintf("%v", value)
 		}
 	}
@@ -70,12 +113,6 @@ func (l *LogEntry) FromMap(logMap map[string]interface{}) {
 
 func main() {
 	flag.Parse()
-
-	if ecsCompatible != nil && *ecsCompatible {
-		keyLevel = "log.level"
-		keyMessage = "message"
-		keyTime = "@timestamp"
-	}
 
 	initFields()
 
@@ -94,17 +131,17 @@ func main() {
 
 func initFields() {
 	if fieldFilter != nil && *fieldFilter != "" {
-		includeFields = make(map[string]struct{})
-		includeFields[*fieldFilter] = struct{}{}
+		includedFields = make(map[string]struct{})
+		includedFields[*fieldFilter] = struct{}{}
 	} else if fieldsFilter != nil && *fieldsFilter != "" {
-		includeFields = make(map[string]struct{})
+		includedFields = make(map[string]struct{})
 		for _, f := range strings.Split(*fieldsFilter, ",") {
-			includeFields[f] = struct{}{}
+			includedFields[f] = struct{}{}
 		}
 	} else if exceptFieldsFilter != nil && *exceptFieldsFilter != "" {
-		excludeFields = make(map[string]struct{})
+		excludedFields = make(map[string]struct{})
 		for _, f := range strings.Split(*exceptFieldsFilter, ",") {
-			excludeFields[f] = struct{}{}
+			excludedFields[f] = struct{}{}
 		}
 	}
 }
@@ -123,7 +160,7 @@ func readStdin() {
 	var logEntries []LogEntry
 	lineCount := 1
 	for err == nil && !isPrefix {
-		// fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
+		//fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
 
 		logEntry := LogEntry{
 			OriginalJson: line,
@@ -177,12 +214,12 @@ func printSingleLine(logEntry *LogEntry) {
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if len(includeFields) > 0 {
-				if _, included := includeFields[fieldName]; included {
+			if len(includedFields) > 0 {
+				if _, included := includedFields[fieldName]; included {
 					addField(fieldName, fieldValue)
 				}
-			} else if len(excludeFields) > 0 {
-				if _, excluded := excludeFields[fieldName]; !excluded {
+			} else if len(excludedFields) > 0 {
+				if _, excluded := excludedFields[fieldName]; !excluded {
 					addField(fieldName, fieldValue)
 				}
 			} else {
@@ -212,12 +249,12 @@ func printMultiLine(logEntry *LogEntry) {
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
-			if len(includeFields) > 0 {
-				if _, included := includeFields[fieldName]; included {
+			if len(includedFields) > 0 {
+				if _, included := includedFields[fieldName]; included {
 					addField(fieldName, fieldValue)
 				}
-			} else if len(excludeFields) > 0 {
-				if _, excluded := excludeFields[fieldName]; !excluded {
+			} else if len(excludedFields) > 0 {
+				if _, excluded := excludedFields[fieldName]; !excluded {
 					addField(fieldName, fieldValue)
 				}
 			} else {
