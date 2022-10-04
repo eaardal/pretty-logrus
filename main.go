@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -25,9 +26,17 @@ var levelFilter = flag.String("level", "", "Only show log messages with matching
 var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
+var truncateFlag = flag.String("trunc", "", "Truncate the content of this field by x number of characters. Example: --trunc message=50")
 
 var includedFields map[string]struct{}
 var excludedFields map[string]struct{}
+
+type Truncate struct {
+	FieldName string
+	NumChars  int
+}
+
+var truncate *Truncate
 
 // Elastic Common Schema (ECS) field names
 // https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html
@@ -144,6 +153,23 @@ func initFields() {
 			excludedFields[f] = struct{}{}
 		}
 	}
+
+	if truncateFlag != nil && *truncateFlag != "" {
+		parts := strings.Split(*truncateFlag, "=")
+		if len(parts) != 2 {
+			log.Fatalf("Invalid format for --trunc flag: %s, expected [fieldname]=[number of chars to include]. Example: --trunc message=50", *truncateFlag)
+		}
+
+		numChars, err := strconv.Atoi(parts[1])
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		truncate = &Truncate{
+			FieldName: parts[0],
+			NumChars:  numChars,
+		}
+	}
 }
 
 // https://stackoverflow.com/a/49704981
@@ -151,7 +177,7 @@ func initFields() {
 func readStdin() {
 	reader := bufio.NewReader(os.Stdin)
 
-	line, isPrefix, err := reader.ReadLine()
+	line, err := reader.ReadBytes('\n')
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -159,7 +185,7 @@ func readStdin() {
 
 	var logEntries []LogEntry
 	lineCount := 1
-	for err == nil && !isPrefix {
+	for err == nil {
 		//fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
 
 		logEntry := LogEntry{
@@ -183,7 +209,7 @@ func readStdin() {
 			logEntries = append(logEntries, logEntry)
 		}
 
-		line, isPrefix, err = reader.ReadLine()
+		line, err = reader.ReadBytes('\n')
 		lineCount++
 	}
 
@@ -204,7 +230,8 @@ func printSingleLine(logEntry *LogEntry) {
 	fields := ""
 
 	addField := func(fieldName, fieldValue string) {
-		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(fieldValue))
+		value := fmtValue(fieldName, fieldValue)
+		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(value))
 		if fields == "" {
 			fields = field
 		} else {
@@ -229,9 +256,9 @@ func printSingleLine(logEntry *LogEntry) {
 	}
 
 	if len(fields) > 0 {
-		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message), fields)
+		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(logEntry.Message)), fields)
 	} else {
-		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(logEntry.Message)))
 	}
 }
 
@@ -239,7 +266,8 @@ func printMultiLine(logEntry *LogEntry) {
 	fields := ""
 
 	addField := func(fieldName, fieldValue string) {
-		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", fieldValue)))
+		value := fmtValue(fieldName, fieldValue)
+		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", value)))
 		if fields == "" {
 			fields = field
 		} else {
@@ -263,7 +291,7 @@ func printMultiLine(logEntry *LogEntry) {
 		}
 	}
 
-	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(logEntry.Message))
+	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(logEntry.Message)))
 
 	if len(fields) > 0 {
 		fmt.Println(fields)
@@ -279,4 +307,20 @@ func formatLevel(entry *LogEntry) string {
 		level = red(entry.Level)
 	}
 	return level
+}
+
+func fmtValue(key, value string) string {
+	if truncate != nil && truncate.FieldName == key {
+
+		if len(value) > truncate.NumChars {
+			return value[:truncate.NumChars]
+		}
+		return value
+
+	}
+	return value
+}
+
+func fmtMessage(message string) string {
+	return fmtValue("message", message)
 }
