@@ -32,18 +32,8 @@ Options:
 
 :calendar: 2022-10-04
 
-:sparkles: Added `--trunc` flag to limit the output of a certain field. The value of the given field name will be cut off at the given character index.
-
-Examples:
-
-```
---trunc message=50
---trunc service.name=10
-```
-
-At this time only one field can be truncated at a time.
-
-:bug: Fixed a bug where long lines would be skipped entirely and the line would be lost without any warning or information.
+- :sparkles: Added `--trunc` flag to limit the output of a certain field. The value of the given field name will be cut off at the given character index. Only one field can be truncated at a time. Example: `--trunc service.name=10`.
+- :bug: Fixed a bug where long lines would be skipped entirely and the line would be lost without any warning or information.
 
 ## v1.0.0
 
