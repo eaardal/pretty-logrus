@@ -24,7 +24,7 @@ Options:
 - `--field <field>`: Only show this specific data field
 - `--fields <field>,<field>`: Only show specific data fields separated by comma
 - `--except <field>,<field>`: Don't show this particular field or fields separated by comma
-- `--trunc <field>=<num chars>`: Truncate the content of this field by x number of characters. Example: --trunc message=50
+- `--trunc <field>=<num chars>`: Truncate the content of this field by x number of characters. Example: `--trunc message=50`
 
 # Changelog
 
