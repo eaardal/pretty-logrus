@@ -32,8 +32,8 @@ Options:
   --trunc message=50 # Print the first 50 characters in the message field (as before)
   --trunc message="\n" # Print everything up until the first line break in the message field
   --trunc message="\t" # Print everything up until the first tab character in the message field
-  --trunc message=mytext # Print everything up until the first occurrance of the phrase 'mytext' in the message field.
-  --trunc message="stop it" # Print everything up until the first occurrance of the phrase 'stop it' in the message field.
+  --trunc message=mytext # Print everything up until the first occurrence of the phrase 'mytext' in the message field.
+  --trunc message="stop it" # Print everything up until the first occurrence of the phrase 'stop it' in the message field.
   --trunc message=" " # Print everything up until the first empty space in the message field.
   ```
 

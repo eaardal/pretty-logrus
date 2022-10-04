@@ -350,12 +350,15 @@ func printMultiLine(logEntry *LogEntry) {
 
 func formatLevel(entry *LogEntry) string {
 	level := cyan(entry.Level)
+
 	if entry.Level == "warning" {
 		level = yellow(entry.Level)
 	}
+
 	if entry.Level == "error" || entry.Level == "fatal" {
 		level = red(entry.Level)
 	}
+
 	return level
 }
 
