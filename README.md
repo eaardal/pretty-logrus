@@ -24,9 +24,26 @@ Options:
 - `--field <field>`: Only show this specific data field
 - `--fields <field>,<field>`: Only show specific data fields separated by comma
 - `--except <field>,<field>`: Don't show this particular field or fields separated by comma
-- `--trunc <field>=<num chars>`: Truncate the content of this field by x number of characters. Example: `--trunc message=50`
+- `--trunc <field>=<num chars or substr>`: Truncate the content of this field by x number of characters.
+
+  Truncate examples:
+
+  ```shell
+  --trunc message=50 # Print the first 50 characters in the message field (as before)
+  --trunc message="\n" # Print everything up until the first line break in the message field
+  --trunc message="\t" # Print everything up until the first tab character in the message field
+  --trunc message=mytext # Print everything up until the first occurrance of the phrase 'mytext' in the message field.
+  --trunc message="stop it" # Print everything up until the first occurrance of the phrase 'stop it' in the message field.
+  --trunc message=" " # Print everything up until the first empty space in the message field.
+  ```
 
 # Changelog
+
+## v1.1.1
+
+:calendar: 2022-10-04
+
+- :hammer_and_wrench: Truncate flag now supports substrings, newline and tab characters in addition to a character index.
 
 ## v1.1.0
 

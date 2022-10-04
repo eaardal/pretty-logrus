@@ -27,6 +27,7 @@ var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
 var truncateFlag = flag.String("trunc", "", "Truncate the content of this field by x number of characters. Example: --trunc message=50")
+var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
 
 var includedFields map[string]struct{}
 var excludedFields map[string]struct{}
@@ -34,6 +35,51 @@ var excludedFields map[string]struct{}
 type Truncate struct {
 	FieldName string
 	NumChars  int
+	Substr    string
+}
+
+func (t *Truncate) Truncate(value string) string {
+	if t.NumChars > -1 {
+		return t.truncAtNumChars(value)
+	}
+
+	if t.Substr != "" {
+		return t.truncAtSubstr(value)
+	}
+
+	return value
+}
+
+func (t *Truncate) truncAtNumChars(value string) string {
+	if truncate.NumChars == -1 {
+		return value
+	}
+
+	if len(value) > truncate.NumChars {
+		return value[:truncate.NumChars]
+	}
+	return value
+}
+
+func (t *Truncate) truncAtSubstr(value string) string {
+	if truncate.Substr == "" {
+		return value
+	}
+
+	// If flag is --trunc message="\n" (truncate at newline character) then it'll be read as "\\n" at this point. To match it against newline char \n in a text, we must correct it.
+	if strings.Contains(t.Substr, "\\n") {
+		t.Substr = "\n"
+	}
+
+	// If flag is --trunc message="\t" (truncate at tab character) then it'll be read as "\\t" at this point. To match it against a tab char \t in a text, we must correct it.
+	if strings.Contains(t.Substr, "\\t") {
+		t.Substr = "\t"
+	}
+
+	if indexOfSubstr := strings.Index(value, truncate.Substr); indexOfSubstr > -1 {
+		return value[:indexOfSubstr]
+	}
+	return value
 }
 
 var truncate *Truncate
@@ -160,14 +206,15 @@ func initFields() {
 			log.Fatalf("Invalid format for --trunc flag: %s, expected [fieldname]=[number of chars to include]. Example: --trunc message=50", *truncateFlag)
 		}
 
-		numChars, err := strconv.Atoi(parts[1])
-		if err != nil {
-			log.Fatal(err)
-		}
-
 		truncate = &Truncate{
 			FieldName: parts[0],
-			NumChars:  numChars,
+			NumChars:  -1,
+		}
+
+		if numChars, err := strconv.Atoi(parts[1]); err != nil {
+			truncate.Substr = parts[1]
+		} else {
+			truncate.NumChars = numChars
 		}
 	}
 }
@@ -186,7 +233,10 @@ func readStdin() {
 	var logEntries []LogEntry
 	lineCount := 1
 	for err == nil {
-		//fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
+
+		if debugFlag != nil && *debugFlag {
+			fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
+		}
 
 		logEntry := LogEntry{
 			OriginalJson: line,
@@ -311,12 +361,7 @@ func formatLevel(entry *LogEntry) string {
 
 func fmtValue(key, value string) string {
 	if truncate != nil && truncate.FieldName == key {
-
-		if len(value) > truncate.NumChars {
-			return value[:truncate.NumChars]
-		}
-		return value
-
+		return truncate.Truncate(value)
 	}
 	return value
 }
