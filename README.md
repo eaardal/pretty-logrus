@@ -39,6 +39,12 @@ Options:
 
 # Changelog
 
+> :hammer_and_wrench: - Enhancements, improvements  
+> :sparkles: - New features, additions  
+> :bug: - Bug fixes  
+> :boom: - Breaking changes  
+> :scissors: - Remove features, deletions
+
 ## v1.1.1
 
 :calendar: 2022-10-04
