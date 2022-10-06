@@ -98,14 +98,15 @@ var timeKeywords = []string{logrus.FieldKeyTime, ecsTimestampField}
 var errorKeywords = []string{logrus.ErrorKey}
 
 type LogEntry struct {
-	OriginalJson []byte
-	Time         string
-	Level        string
-	Message      string
-	Fields       map[string]string
+	OriginalLogLine []byte
+	Time            string
+	Level           string
+	Message         string
+	Fields          map[string]string
+	IsParsed        bool
 }
 
-func (l *LogEntry) FromMap(logMap map[string]interface{}) {
+func (l *LogEntry) UseParsedLogLine(logMap map[string]interface{}) {
 	for key, value := range logMap {
 		match := false
 
@@ -164,6 +165,13 @@ func (l *LogEntry) FromMap(logMap map[string]interface{}) {
 			l.Fields[key] = fmt.Sprintf("%v", value)
 		}
 	}
+
+	l.IsParsed = true
+}
+
+func (l *LogEntry) UseOriginalLogLine(line []byte) {
+	copy(l.OriginalLogLine, line)
+	l.IsParsed = false
 }
 
 func main() {
@@ -224,54 +232,54 @@ func initFields() {
 func readStdin() {
 	reader := bufio.NewReader(os.Stdin)
 
-	line, err := reader.ReadBytes('\n')
-	if err != nil {
-		log.Fatal(err)
+	line, readErr := reader.ReadBytes('\n')
+	if readErr != nil {
+		log.Fatalf("failed to read from stdin: %v", readErr)
 		return
 	}
 
-	var logEntries []LogEntry
-	lineCount := 1
-	for err == nil {
+	var logEntries []*LogEntry
 
-		if debugFlag != nil && *debugFlag {
-			fmt.Printf("[LINE %d]: json: %s\n\n", lineCount, line)
+	for readErr == nil {
+		logEntry := &LogEntry{
+			OriginalLogLine: line,
+			Fields:          make(map[string]string),
 		}
 
-		logEntry := LogEntry{
-			OriginalJson: line,
-			Fields:       make(map[string]string),
-		}
+		parsedLogLine := make(map[string]interface{}, 0)
 
-		logMap := make(map[string]interface{}, 0)
-		if err := json.Unmarshal(line, &logMap); err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		logEntry.FromMap(logMap)
-
-		if levelFilter != nil && *levelFilter != "" {
-			if *levelFilter == logEntry.Level {
-				logEntries = append(logEntries, logEntry)
-			}
+		if err := json.Unmarshal(line, &parsedLogLine); err != nil {
+			logEntry.UseOriginalLogLine(line)
 		} else {
-			logEntries = append(logEntries, logEntry)
+			logEntry.UseParsedLogLine(parsedLogLine)
 		}
 
-		line, err = reader.ReadBytes('\n')
-		lineCount++
+		logEntries = append(logEntries, logEntry)
+		line, readErr = reader.ReadBytes('\n')
 	}
 
 	printLogEntries(logEntries)
 }
 
-func printLogEntries(logEntries []LogEntry) {
-	for _, logEntry := range logEntries {
+func printLogEntries(logEntries []*LogEntry) {
+	for i, logEntry := range logEntries {
+		if !shouldShowLogLine(logEntry) {
+			continue
+		}
+
+		if debugFlag != nil && *debugFlag {
+			fmt.Printf("[ORIGINAL LINE %d]: %s\n", i+1, string(logEntry.OriginalLogLine))
+		}
+
+		if !logEntry.IsParsed {
+			println(string(logEntry.OriginalLogLine))
+			continue
+		}
+
 		if multiLine != nil && *multiLine {
-			printMultiLine(&logEntry)
+			printMultiLine(logEntry)
 		} else {
-			printSingleLine(&logEntry)
+			printSingleLine(logEntry)
 		}
 	}
 }
@@ -371,4 +379,9 @@ func fmtValue(key, value string) string {
 
 func fmtMessage(message string) string {
 	return fmtValue("message", message)
+}
+
+func shouldShowLogLine(logEntry *LogEntry) bool {
+	hasLevelFilter := levelFilter != nil && *levelFilter != ""
+	return !hasLevelFilter || (hasLevelFilter && *levelFilter == logEntry.Level)
 }

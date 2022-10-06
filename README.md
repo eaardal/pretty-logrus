@@ -45,6 +45,12 @@ Options:
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.1.2
+
+:calendar: 2022-10-06
+
+- :bug: If a log line cannot be parsed (i.e. if it's not a line with JSON on the expected logrus format), it will be printed as-is instead of being ignored by the error handler.
+
 ## v1.1.1
 
 :calendar: 2022-10-04
