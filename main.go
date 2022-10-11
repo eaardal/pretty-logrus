@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 var cyan = color.CyanString
@@ -230,6 +232,16 @@ func initFields() {
 // https://stackoverflow.com/a/49704981
 // https://flaviocopes.com/go-shell-pipes/
 func readStdin() {
+	logEntryCh := make(chan *LogEntry, 1)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx := context.Background()
+	go func() {
+		defer wg.Done()
+		printLogEntries(ctx, logEntryCh)
+	}()
+
 	reader := bufio.NewReader(os.Stdin)
 
 	line, readErr := reader.ReadBytes('\n')
@@ -237,8 +249,6 @@ func readStdin() {
 		log.Fatalf("failed to read from stdin: %v", readErr)
 		return
 	}
-
-	var logEntries []*LogEntry
 
 	for readErr == nil {
 		logEntry := &LogEntry{
@@ -254,32 +264,48 @@ func readStdin() {
 			logEntry.UseParsedLogLine(parsedLogLine)
 		}
 
-		logEntries = append(logEntries, logEntry)
+		select {
+		case <-ctx.Done():
+			return
+		case logEntryCh <- logEntry:
+		}
 		line, readErr = reader.ReadBytes('\n')
 	}
 
-	printLogEntries(logEntries)
+	close(logEntryCh)
+	// wait until last line is printed
+	wg.Wait()
 }
 
-func printLogEntries(logEntries []*LogEntry) {
-	for i, logEntry := range logEntries {
-		if !shouldShowLogLine(logEntry) {
-			continue
-		}
+func printLogEntries(ctx context.Context, logEntries <-chan *LogEntry) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case logEntry, ok := <-logEntries:
+			if !ok {
+				return
+			}
 
-		if debugFlag != nil && *debugFlag {
-			fmt.Printf("[ORIGINAL LINE %d]: %s\n", i+1, string(logEntry.OriginalLogLine))
-		}
+			if !shouldShowLogLine(logEntry) {
+				continue
+			}
 
-		if !logEntry.IsParsed {
-			println(string(logEntry.OriginalLogLine))
-			continue
-		}
+			if debugFlag != nil && *debugFlag {
+				//fmt.Printf("[ORIGINAL LINE %d]: %s\n", i+1, string(logEntry.OriginalLogLine))
+				fmt.Printf("[ORIGINAL LINE]: %s\n", string(logEntry.OriginalLogLine))
+			}
 
-		if multiLine != nil && *multiLine {
-			printMultiLine(logEntry)
-		} else {
-			printSingleLine(logEntry)
+			if !logEntry.IsParsed {
+				println(string(logEntry.OriginalLogLine))
+				continue
+			}
+
+			if multiLine != nil && *multiLine {
+				printMultiLine(logEntry)
+			} else {
+				printSingleLine(logEntry)
+			}
 		}
 	}
 }
