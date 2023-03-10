@@ -45,6 +45,22 @@ Options:
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.1.3
+
+:calendar: 2022-10-24
+
+- :hammer_and_wrench: A field named `labels` will be treated as a map of other sub-fields and each sub-field under labels will be printed as `labels.<subfield>=[<value>]`. Example:
+
+Before
+```
+labels=[map[string]struct{ foo: "bar", abc: "def" }]
+```
+
+After
+```
+labels.foo=[bar] labels.abc=[def]
+```
+
 ## v1.1.2
 
 :calendar: 2022-10-06

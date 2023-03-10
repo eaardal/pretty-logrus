@@ -98,6 +98,7 @@ var messageKeywords = []string{logrus.FieldKeyMsg, ecsMessageField}
 var levelKeywords = []string{logrus.FieldKeyLevel, ecsLevelField}
 var timeKeywords = []string{logrus.FieldKeyTime, ecsTimestampField}
 var errorKeywords = []string{logrus.ErrorKey}
+var dataFieldKeywords = []string{"labels"}
 
 type LogEntry struct {
 	OriginalLogLine []byte
@@ -156,6 +157,21 @@ func (l *LogEntry) UseParsedLogLine(logMap map[string]interface{}) {
 				case map[string]interface{}:
 					for errKey, errValue := range val {
 						l.Fields[key+"."+errKey] = errValue.(string)
+					}
+				}
+				match = true
+				break
+			}
+		}
+
+		for _, dataFieldKeyword := range dataFieldKeywords {
+			if strings.ToLower(key) == dataFieldKeyword {
+				switch val := value.(type) {
+				case string:
+					l.Fields[key] = val
+				case map[string]interface{}:
+					for dataFieldKey, dataFieldValue := range val {
+						l.Fields[key+"."+dataFieldKey] = fmt.Sprintf("%v", dataFieldValue)
 					}
 				}
 				match = true
