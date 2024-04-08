@@ -10,7 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -29,10 +28,12 @@ var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
 var truncateFlag = flag.String("trunc", "", "Truncate the content of this field by x number of characters. Example: --trunc message=50")
+var whereFlag = flag.String("where", "", "Filter log entries based on a condition. Example: --where trace.id=abc")
 var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
 
 var includedFields map[string]struct{}
 var excludedFields map[string]struct{}
+var whereFields map[string]string
 
 type Truncate struct {
 	FieldName string
@@ -101,6 +102,7 @@ var errorKeywords = []string{logrus.ErrorKey}
 var dataFieldKeywords = []string{"labels"}
 
 type LogEntry struct {
+	LineNumber      int
 	OriginalLogLine []byte
 	Time            string
 	Level           string
@@ -195,7 +197,11 @@ func (l *LogEntry) UseOriginalLogLine(line []byte) {
 func main() {
 	flag.Parse()
 
-	initFields()
+	if isDebug() {
+		fmt.Printf("Args: %+v\n", os.Args)
+	}
+
+	parseArgs()
 
 	stat, err := os.Stdin.Stat()
 	if err != nil {
@@ -207,41 +213,6 @@ func main() {
 		readStdin()
 	} else {
 		log.Fatalf("Expected to find content from stdin. Example usage: kubectl logs <pod> | plr")
-	}
-}
-
-func initFields() {
-	if fieldFilter != nil && *fieldFilter != "" {
-		includedFields = make(map[string]struct{})
-		includedFields[*fieldFilter] = struct{}{}
-	} else if fieldsFilter != nil && *fieldsFilter != "" {
-		includedFields = make(map[string]struct{})
-		for _, f := range strings.Split(*fieldsFilter, ",") {
-			includedFields[f] = struct{}{}
-		}
-	} else if exceptFieldsFilter != nil && *exceptFieldsFilter != "" {
-		excludedFields = make(map[string]struct{})
-		for _, f := range strings.Split(*exceptFieldsFilter, ",") {
-			excludedFields[f] = struct{}{}
-		}
-	}
-
-	if truncateFlag != nil && *truncateFlag != "" {
-		parts := strings.Split(*truncateFlag, "=")
-		if len(parts) != 2 {
-			log.Fatalf("Invalid format for --trunc flag: %s, expected [fieldname]=[number of chars to include]. Example: --trunc message=50", *truncateFlag)
-		}
-
-		truncate = &Truncate{
-			FieldName: parts[0],
-			NumChars:  -1,
-		}
-
-		if numChars, err := strconv.Atoi(parts[1]); err != nil {
-			truncate.Substr = parts[1]
-		} else {
-			truncate.NumChars = numChars
-		}
 	}
 }
 
@@ -260,6 +231,7 @@ func readStdin() {
 
 	reader := bufio.NewReader(os.Stdin)
 
+	lineCount := 0
 	line, readErr := reader.ReadBytes('\n')
 	if readErr != nil {
 		log.Fatalf("failed to read from stdin: %v", readErr)
@@ -267,7 +239,14 @@ func readStdin() {
 	}
 
 	for readErr == nil {
+		lineCount++
+
+		if isDebug() {
+			fmt.Printf("==== BEGIN LINE %d ====\n[RAW INPUT]: %q\n", lineCount, string(line))
+		}
+
 		logEntry := &LogEntry{
+			LineNumber:      lineCount,
 			OriginalLogLine: line,
 			Fields:          make(map[string]string),
 		}
@@ -278,6 +257,12 @@ func readStdin() {
 			logEntry.UseOriginalLogLine(line)
 		} else {
 			logEntry.UseParsedLogLine(parsedLogLine)
+		}
+
+		if isDebug() {
+			j, _ := json.MarshalIndent(logEntry, "", "  ")
+			fmt.Printf("[PARSED LOG ENTRY]: %s\n", string(j))
+			fmt.Printf("==== END LINE %d ====\n", lineCount)
 		}
 
 		select {
@@ -304,12 +289,10 @@ func printLogEntries(ctx context.Context, logEntries <-chan *LogEntry) {
 			}
 
 			if !shouldShowLogLine(logEntry) {
+				if isDebug() {
+					fmt.Printf("Not showing log entry %d\n", logEntry.LineNumber)
+				}
 				continue
-			}
-
-			if debugFlag != nil && *debugFlag {
-				//fmt.Printf("[ORIGINAL LINE %d]: %s\n", i+1, string(logEntry.OriginalLogLine))
-				fmt.Printf("[ORIGINAL LINE]: %s\n", string(logEntry.OriginalLogLine))
 			}
 
 			if !logEntry.IsParsed {
@@ -424,6 +407,33 @@ func fmtMessage(message string) string {
 }
 
 func shouldShowLogLine(logEntry *LogEntry) bool {
-	hasLevelFilter := levelFilter != nil && *levelFilter != ""
-	return !hasLevelFilter || (hasLevelFilter && *levelFilter == logEntry.Level)
+	return shouldShowLogLineForLevelFilter(logEntry) && shouldShowLogLineForWhereFilter(logEntry)
+}
+
+func shouldShowLogLineForLevelFilter(logEntry *LogEntry) bool {
+	if levelFilter == nil || *levelFilter == "" {
+		return true
+	}
+
+	return logEntry.Level == *levelFilter
+}
+
+func shouldShowLogLineForWhereFilter(logEntry *LogEntry) bool {
+	if whereFields == nil {
+		return true
+	}
+
+	for field, value := range whereFields {
+		if fieldValue, ok := logEntry.Fields[field]; ok {
+			if fieldValue == value {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isDebug() bool {
+	return debugFlag != nil && *debugFlag
 }
