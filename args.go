@@ -3,37 +3,78 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 )
 
-func parseArgs() {
+type Args struct {
+	IncludedFields map[string]struct{}
+	ExcludedFields map[string]struct{}
+	Truncate       *Truncate
+	WhereFields    map[string]string
+}
+
+func parseArgs() *Args {
+	args := &Args{}
+
+	args.IncludedFields = parseFieldArg()
+	args.IncludedFields = parseFieldsArg()
+	args.ExcludedFields = parseExceptArg()
+	args.Truncate = parseTruncArg()
+	args.WhereFields = parseWhereArg()
+
+	if isDebug() {
+		fmt.Printf("Raw args/flags: %+v\n", os.Args)
+		fmt.Println("Parsed args/flags:")
+		fmt.Printf("Included fields: %+v\n", args.IncludedFields)
+		fmt.Printf("Excluded fields: %+v\n", args.ExcludedFields)
+		fmt.Printf("Truncate: %+v\n", args.Truncate)
+		fmt.Printf("Where: %+v\n", args.WhereFields)
+	}
+
+	return args
+}
+
+func parseFieldArg() map[string]struct{} {
 	if fieldFilter != nil && *fieldFilter != "" {
-		// Set up --field
-		includedFields = make(map[string]struct{})
+		includedFields := make(map[string]struct{})
 		includedFields[*fieldFilter] = struct{}{}
-	} else if fieldsFilter != nil && *fieldsFilter != "" {
-		// Set up --fields
-		includedFields = make(map[string]struct{})
+		return includedFields
+	}
+	return nil
+}
+
+func parseFieldsArg() map[string]struct{} {
+	if fieldsFilter != nil && *fieldsFilter != "" {
+		includedFields := make(map[string]struct{})
 		for _, f := range strings.Split(*fieldsFilter, ",") {
 			includedFields[f] = struct{}{}
 		}
-	} else if exceptFieldsFilter != nil && *exceptFieldsFilter != "" {
-		// Set up --except
-		excludedFields = make(map[string]struct{})
+		return includedFields
+	}
+	return nil
+}
+
+func parseExceptArg() map[string]struct{} {
+	if exceptFieldsFilter != nil && *exceptFieldsFilter != "" {
+		excludedFields := make(map[string]struct{})
 		for _, f := range strings.Split(*exceptFieldsFilter, ",") {
 			excludedFields[f] = struct{}{}
 		}
+		return excludedFields
 	}
+	return nil
+}
 
-	// Set up --trunc
+func parseTruncArg() *Truncate {
 	if truncateFlag != nil && *truncateFlag != "" {
 		parts := strings.Split(*truncateFlag, "=")
 		if len(parts) != 2 {
 			log.Fatalf("Invalid format for --trunc flag: %s, expected [fieldname]=[number of chars to include]. Example: --trunc message=50", *truncateFlag)
 		}
 
-		truncate = &Truncate{
+		truncate := &Truncate{
 			FieldName: parts[0],
 			NumChars:  -1,
 		}
@@ -43,11 +84,16 @@ func parseArgs() {
 		} else {
 			truncate.NumChars = numChars
 		}
+
+		return truncate
 	}
 
-	// Set up --where
+	return nil
+}
+
+func parseWhereArg() map[string]string {
 	if whereFlag != nil && *whereFlag != "" {
-		whereFields = make(map[string]string)
+		whereFields := make(map[string]string)
 
 		// Check if multiple where clauses are specified like `--where trace.id=abc,something=else` etc
 		if strings.Contains(*whereFlag, ",") {
@@ -67,13 +113,9 @@ func parseArgs() {
 			}
 			whereFields[parts[0]] = parts[1]
 		}
+
+		return whereFields
 	}
 
-	if isDebug() {
-		fmt.Println("Initialized fields from flags:")
-		fmt.Printf("Included fields: %+v\n", includedFields)
-		fmt.Printf("Excluded fields: %+v\n", excludedFields)
-		fmt.Printf("Truncate: %+v\n", truncate)
-		fmt.Printf("Where: %+v\n", whereFields)
-	}
+	return nil
 }
