@@ -24,18 +24,17 @@ Options:
 - `--field <field>`: Only show this specific data field
 - `--fields <field>,<field>`: Only show specific data fields separated by comma
 - `--except <field>,<field>`: Don't show this particular field or fields separated by comma
-- `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring
-
-  Truncate examples:
-
-  ```shell
-  --trunc message=50 # Print the first 50 characters in the message field
-  --trunc message="\n" # Print everything up until the first line break in the message field
-  --trunc message="\t" # Print everything up until the first tab character in the message field
-  --trunc message=mytext # Print everything up until the first occurrence of the phrase 'mytext' in the message field.
-  --trunc message="stop it" # Print everything up until the first occurrence of the phrase 'stop it' in the message field.
-  --trunc message=" " # Print everything up until the first empty space in the message field.
-  ```
+- `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring. Several usage examples:
+  - `--trunc message=50`: Print the first 50 characters in the message field
+  - `--trunc message="\n"`: Print everything up until the first line break in the message field
+  - `--trunc message="\t"`: Print everything up until the first tab character in the message field
+  - `--trunc message=mytext`: Print everything up until the first occurrence of the phrase 'mytext' in the message field.
+  - `--trunc message="stop it"`: Print everything up until the first occurrence of the phrase 'stop it' in the message field.
+  - `--trunc message=" "`: Print everything up until the first empty space in the message field.
+- `--where <field>=<value>`: Only show log messages where the value occurs. Several usage examples:
+  - `--where <field>=<value>`: Only show log messages where the specific field has the given value
+  - `--where <field>=<value>,<field>=<value>`: Specify multiple conditions separated by comma
+  - `--where <value>`: Only show log messages where the value occurs in any data field or the message field. Value can be a partial phrase or text.
 
 # Changelog
 
@@ -44,6 +43,18 @@ Options:
 > :bug: - Bug fixes  
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
+
+## v1.1.5
+
+:calendar: 2024-04-08
+
+:sparkles: Added `--where` flag to filter log messages based on field values. Example: `--where trace.id=1234`. See usage examples above for more variations.
+
+## v1.1.4
+
+:calendar: 2023-03-13
+
+- :hammer_and_wrench: Support tailing like `kubectl logs -f | plr`
 
 ## v1.1.3
 
