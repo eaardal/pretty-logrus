@@ -7,22 +7,26 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sync"
 )
 
 // https://stackoverflow.com/a/49704981
 // https://flaviocopes.com/go-shell-pipes/
-func readStdin() {
-	logEntryCh := make(chan *LogEntry, 1)
+func readStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	ctx := context.Background()
-	go func() {
-		defer wg.Done()
-		printLogEntries(ctx, logEntryCh)
-	}()
+	// Check that stdin is not a terminal, implying that we are reading from a pipe
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		readAndParseStdin(ctx, logEntryCh)
+	} else {
+		log.Fatalf("Expected to find content from stdin piped from another command. Example usage: kubectl logs <pod> | plr")
+	}
+}
 
+func readAndParseStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
 	reader := bufio.NewReader(os.Stdin)
 
 	line, readErr := reader.ReadBytes('\n')
@@ -36,39 +40,45 @@ func readStdin() {
 	for readErr == nil {
 		lineCount++
 
-		if isDebug() {
-			fmt.Printf("==== BEGIN LINE %d ====\n[RAW INPUT]: %q\n", lineCount, string(line))
-		}
-
-		logEntry := &LogEntry{
-			LineNumber:      lineCount,
-			OriginalLogLine: line,
-			Fields:          make(map[string]string),
-		}
-
-		parsedLogLine := make(map[string]interface{}, 0)
-
-		if err := json.Unmarshal(line, &parsedLogLine); err != nil {
-			logEntry.setOriginalLogLine(line)
-		} else {
-			logEntry.setFromJsonMap(parsedLogLine)
-		}
-
-		if isDebug() {
-			j, _ := json.MarshalIndent(logEntry, "", "  ")
-			fmt.Printf("[PARSED LOG ENTRY]: %s\n", string(j))
-			fmt.Printf("==== END LINE %d ====\n", lineCount)
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case logEntryCh <- logEntry:
-		}
+		logEntry := parseLogLine(line, lineCount)
+		sendToPrinter(ctx, logEntryCh, logEntry)
 
 		line, readErr = reader.ReadBytes('\n')
 	}
 
 	close(logEntryCh)
-	wg.Wait()
+}
+
+func parseLogLine(line []byte, lineCount int) *LogEntry {
+	logEntry := &LogEntry{
+		LineNumber:      lineCount,
+		OriginalLogLine: line,
+		Fields:          make(map[string]string),
+	}
+
+	parsedLogLine := make(map[string]interface{}, 0)
+
+	if err := json.Unmarshal(line, &parsedLogLine); err != nil {
+		logEntry.setOriginalLogLine(line)
+	} else {
+		logEntry.setFromJsonMap(parsedLogLine)
+	}
+
+	if isDebug() {
+		fmt.Printf("==== BEGIN DEBUG LINE %d ====\n", lineCount)
+		fmt.Printf("[RAW INPUT]: %q\n", string(line))
+		j, _ := json.MarshalIndent(logEntry, "", "  ")
+		fmt.Printf("[PARSED LOG ENTRY]: %s\n", string(j))
+		fmt.Printf("==== END DEBUG LINE %d ====\n", lineCount)
+	}
+
+	return logEntry
+}
+
+func sendToPrinter(ctx context.Context, logEntryCh chan<- *LogEntry, logEntry *LogEntry) {
+	select {
+	case <-ctx.Done():
+		return
+	case logEntryCh <- logEntry:
+	}
 }

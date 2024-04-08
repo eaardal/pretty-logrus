@@ -3,7 +3,16 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
+	"strings"
 )
+
+var cyan = color.CyanString
+var blue = color.BlueString
+var yellow = color.YellowString
+var green = color.GreenString
+var white = color.WhiteString
+var red = color.RedString
 
 func printLogEntries(ctx context.Context, args Args, logEntries <-chan *LogEntry) {
 	for {
@@ -151,9 +160,24 @@ func shouldShowLogLineForWhereFilter(whereFields map[string]string, logEntry *Lo
 	}
 
 	for field, value := range whereFields {
-		if fieldValue, ok := logEntry.Fields[field]; ok {
-			if fieldValue == value {
+		if field == AnyField {
+			// Check if the value is in any of the data fields
+			for _, fieldValue := range logEntry.Fields {
+				if strings.Contains(fieldValue, value) {
+					return true
+				}
+			}
+
+			// Check if the value is in the log message
+			if strings.Contains(logEntry.Message, value) {
 				return true
+			}
+		} else {
+			// Check if the value is in the specific data field
+			if fieldValue, ok := logEntry.Fields[field]; ok {
+				if fieldValue == value {
+					return true
+				}
 			}
 		}
 	}

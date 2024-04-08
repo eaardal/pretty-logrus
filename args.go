@@ -19,14 +19,16 @@ func parseArgs() *Args {
 	args := &Args{}
 
 	args.IncludedFields = parseFieldArg()
-	args.IncludedFields = parseFieldsArg()
+	if args.IncludedFields == nil {
+		args.IncludedFields = parseFieldsArg()
+	}
 	args.ExcludedFields = parseExceptArg()
 	args.Truncate = parseTruncArg()
 	args.WhereFields = parseWhereArg()
 
 	if isDebug() {
 		fmt.Printf("Raw args/flags: %+v\n", os.Args)
-		fmt.Println("Parsed args/flags:")
+		fmt.Printf("Parsed args/flags:\n")
 		fmt.Printf("Included fields: %+v\n", args.IncludedFields)
 		fmt.Printf("Excluded fields: %+v\n", args.ExcludedFields)
 		fmt.Printf("Truncate: %+v\n", args.Truncate)
@@ -91,6 +93,8 @@ func parseTruncArg() *Truncate {
 	return nil
 }
 
+const AnyField = "*"
+
 func parseWhereArg() map[string]string {
 	if whereFlag != nil && *whereFlag != "" {
 		whereFields := make(map[string]string)
@@ -100,22 +104,33 @@ func parseWhereArg() map[string]string {
 			whereClauses := strings.Split(*whereFlag, ",")
 
 			for _, whereClause := range whereClauses {
-				parts := strings.Split(whereClause, "=")
-				if len(parts) != 2 {
-					log.Fatalf("Invalid format for --where flag: %s, expected [fieldname]=[value]. Example: --where trace.id=abc. Specify multiple: --where trace.id=abc,something=else,more=stuff", *whereFlag)
-				}
-				whereFields[parts[0]] = parts[1]
+				key, value := parseWhereClause(whereClause)
+				whereFields[key] = value
 			}
 		} else {
-			parts := strings.Split(*whereFlag, "=")
-			if len(parts) != 2 {
-				log.Fatalf("Invalid format for --where flag: %s, expected [fieldname]=[value]. Example: --where trace.id=abc. Specify multiple: --where trace.id=abc,something=else,more=stuff", *whereFlag)
-			}
-			whereFields[parts[0]] = parts[1]
+			key, value := parseWhereClause(*whereFlag)
+			whereFields[key] = value
 		}
 
 		return whereFields
 	}
 
 	return nil
+}
+
+func parseWhereClause(whereClause string) (string, string) {
+	// If we can't find a key=value pair, then assume the value is the entire where clause. We'll look for this value in any message or data field.
+	if !strings.Contains(whereClause, "=") {
+		return AnyField, whereClause
+	}
+
+	parts := strings.Split(whereClause, "=")
+	if len(parts) != 2 {
+		log.Fatalf("Invalid format for --where flag: %s, expected either a) --where [fieldname]=[value], b) --where trace.id=abc,something=else,more=stuff or c) --where [value]", *whereFlag)
+	}
+	return parts[0], parts[1]
+}
+
+func isDebug() bool {
+	return debugFlag != nil && *debugFlag
 }

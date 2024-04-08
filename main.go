@@ -3,18 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/fatih/color"
-	"log"
-	"os"
 	"sync"
 )
-
-var cyan = color.CyanString
-var blue = color.BlueString
-var yellow = color.YellowString
-var green = color.GreenString
-var white = color.WhiteString
-var red = color.RedString
 
 var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines")
 var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
@@ -31,20 +21,6 @@ func main() {
 
 	args := parseArgs()
 
-	stat, err := os.Stdin.Stat()
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-
-	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		readStdin(*args)
-	} else {
-		log.Fatalf("Expected to find content from stdin. Example usage: kubectl logs <pod> | plr")
-	}
-}
-
-func run(args Args) {
 	ctx := context.Background()
 	logEntryCh := make(chan *LogEntry, 1)
 
@@ -53,15 +29,10 @@ func run(args Args) {
 
 	go func() {
 		defer wg.Done()
-		printLogEntries(ctx, args, logEntryCh)
+		printLogEntries(ctx, *args, logEntryCh)
 	}()
 
-	readStdin()
+	readStdin(ctx, logEntryCh)
 
-	close(logEntryCh)
 	wg.Wait()
-}
-
-func isDebug() bool {
-	return debugFlag != nil && *debugFlag
 }

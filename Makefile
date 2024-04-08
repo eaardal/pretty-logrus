@@ -2,4 +2,4 @@ modules:
 	go mod tidy
 
 build:
-	go build -o plr main.go
+	go build -o plr ./...
