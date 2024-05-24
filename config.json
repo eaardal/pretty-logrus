@@ -1,4 +1,11 @@
 {
+  "keywords": {
+    "messageKeywords": ["msg", "message"],
+    "levelKeywords": ["level", "log.level"],
+    "timestampKeywords": ["time", "@timestamp"],
+    "errorKeywords": ["error"],
+    "fieldKeywords": ["labels"]
+  },
   "levelStyles": {
     "default": {
       "fgColor": "fgGreen"
@@ -43,6 +50,14 @@
     }
   },
   "fieldStyles": {
+    "default": {
+      "key": {
+        "fgColor": "fgHiGreen"
+      },
+      "value":{
+        "fgColor": "fgHiCyan"
+      }
+    },
     "trace.id": {
       "key": {
         "fgColor": "fgHiRed",

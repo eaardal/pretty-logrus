@@ -33,7 +33,7 @@ func main() {
 		printLogEntries(ctx, *args, *config, logEntryCh)
 	}()
 
-	readStdin(ctx, logEntryCh)
+	readStdin(ctx, *config, logEntryCh)
 
 	wg.Wait()
 }

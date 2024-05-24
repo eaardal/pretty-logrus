@@ -182,6 +182,11 @@ func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle) stri
 		return defaultFieldName
 	}
 
+	defaultStyles, ok := styles["default"]
+	if ok && defaultStyles.Key != nil {
+		defaultFieldName = applyStyles(defaultStyles.Key).Sprint(fieldName)
+	}
+
 	style := findKeyValueStyle(styles, fieldName)
 	if style == nil {
 		logDebug("No style defined for field %s\n", fieldName)
@@ -204,6 +209,11 @@ func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyVal
 	if styles == nil {
 		logDebug("No field styles defined in config\n")
 		return defaultFieldValue
+	}
+
+	defaultStyles, ok := styles["default"]
+	if ok && defaultStyles.Key != nil {
+		defaultFieldValue = applyStyles(defaultStyles.Key).Sprint(fieldName)
 	}
 
 	style := findKeyValueStyle(styles, fieldName)

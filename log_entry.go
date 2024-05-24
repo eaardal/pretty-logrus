@@ -2,23 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
 )
-
-// Elastic Common Schema (ECS) field names
-// https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html
-const (
-	ecsMessageField   = "message"
-	ecsLevelField     = "log.level"
-	ecsTimestampField = "@timestamp"
-)
-
-var messageKeywords = []string{logrus.FieldKeyMsg, ecsMessageField}
-var levelKeywords = []string{logrus.FieldKeyLevel, ecsLevelField}
-var timeKeywords = []string{logrus.FieldKeyTime, ecsTimestampField}
-var errorKeywords = []string{logrus.ErrorKey}
-var dataFieldKeywords = []string{"labels"}
 
 type LogEntry struct {
 	LineNumber      int
@@ -30,11 +15,11 @@ type LogEntry struct {
 	IsParsed        bool
 }
 
-func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}) {
+func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}, keywords KeywordConfig) {
 	for key, value := range logMap {
 		match := false
 
-		for _, levelKeyword := range levelKeywords {
+		for _, levelKeyword := range keywords.LevelKeywords {
 			if strings.ToLower(key) == levelKeyword {
 				l.Level = value.(string)
 				match = true
@@ -46,7 +31,7 @@ func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}) {
 			continue
 		}
 
-		for _, messageKeyword := range messageKeywords {
+		for _, messageKeyword := range keywords.MessageKeywords {
 			if strings.ToLower(key) == messageKeyword {
 				l.Message = value.(string)
 				match = true
@@ -58,7 +43,7 @@ func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}) {
 			continue
 		}
 
-		for _, timeKeyword := range timeKeywords {
+		for _, timeKeyword := range keywords.TimestampKeywords {
 			if strings.ToLower(key) == timeKeyword {
 				l.Time = value.(string)
 				match = true
@@ -70,7 +55,7 @@ func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}) {
 			continue
 		}
 
-		for _, errorKeyword := range errorKeywords {
+		for _, errorKeyword := range keywords.ErrorKeywords {
 			if strings.ToLower(key) == errorKeyword {
 				switch val := value.(type) {
 				case string:
@@ -85,7 +70,7 @@ func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}) {
 			}
 		}
 
-		for _, dataFieldKeyword := range dataFieldKeywords {
+		for _, dataFieldKeyword := range keywords.FieldKeywords {
 			if strings.ToLower(key) == dataFieldKeyword {
 				switch val := value.(type) {
 				case string:

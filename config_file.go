@@ -3,7 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
+)
+
+// Elastic Common Schema (ECS) field names
+// https://www.elastic.co/guide/en/ecs/current/ecs-field-reference.html
+const (
+	ecsMessageField   = "message"
+	ecsLevelField     = "log.level"
+	ecsTimestampField = "@timestamp"
 )
 
 type Style struct {
@@ -19,11 +28,20 @@ type KeyValueStyle struct {
 	Value *Style
 }
 
+type KeywordConfig struct {
+	MessageKeywords   []string
+	LevelKeywords     []string
+	TimestampKeywords []string
+	ErrorKeywords     []string
+	FieldKeywords     []string
+}
+
 type Config struct {
 	LevelStyles     map[string]Style
 	FieldStyles     map[string]KeyValueStyle
 	MessageStyles   map[string]Style
 	TimestampStyles map[string]Style
+	Keywords        *KeywordConfig
 }
 
 func hasConfigFile() bool {
@@ -37,13 +55,23 @@ func hasConfigFile() bool {
 }
 
 func readConfigFile() *Config {
-	defaultConfig := &Config{
-		FieldStyles: make(map[string]KeyValueStyle),
+	config := &Config{
+		FieldStyles:     make(map[string]KeyValueStyle),
+		LevelStyles:     make(map[string]Style),
+		MessageStyles:   make(map[string]Style),
+		TimestampStyles: make(map[string]Style),
+		Keywords: &KeywordConfig{
+			MessageKeywords:   []string{logrus.FieldKeyMsg, ecsMessageField},
+			LevelKeywords:     []string{logrus.FieldKeyLevel, ecsLevelField},
+			TimestampKeywords: []string{logrus.FieldKeyTime, ecsTimestampField},
+			ErrorKeywords:     []string{logrus.ErrorKey},
+			FieldKeywords:     []string{"labels"},
+		},
 	}
 
 	if !hasConfigFile() {
 		logDebug("No config file found\n")
-		return defaultConfig
+		return config
 	}
 
 	configFilePath := os.Getenv("PRETTY_LOGRUS_HOME") + "/config.json"
@@ -51,13 +79,12 @@ func readConfigFile() *Config {
 	content, err := os.ReadFile(configFilePath)
 	if err != nil {
 		logDebug("Failed to read config file: %v\n", err)
-		return defaultConfig
+		return config
 	}
 
-	var config Config
 	if err = json.Unmarshal(content, &config); err != nil {
 		logDebug("Failed to unmarshal config file: %v\n", err)
-		return defaultConfig
+		return config
 	}
 
 	if isDebug() {
@@ -65,5 +92,5 @@ func readConfigFile() *Config {
 		fmt.Printf("Read config file: %s\n", configJson)
 	}
 
-	return &config
+	return config
 }

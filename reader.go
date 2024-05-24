@@ -11,7 +11,7 @@ import (
 
 // https://stackoverflow.com/a/49704981
 // https://flaviocopes.com/go-shell-pipes/
-func readStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
+func readStdin(ctx context.Context, config Config, logEntryCh chan<- *LogEntry) {
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		log.Fatal(err)
@@ -20,13 +20,13 @@ func readStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
 
 	// Check that stdin is not a terminal, implying that we are reading from a pipe
 	if (stat.Mode() & os.ModeCharDevice) == 0 {
-		readAndParseStdin(ctx, logEntryCh)
+		readAndParseStdin(ctx, config, logEntryCh)
 	} else {
 		log.Fatalf("Expected to find content from stdin piped from another command. Example usage: kubectl logs <pod> | plr")
 	}
 }
 
-func readAndParseStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
+func readAndParseStdin(ctx context.Context, config Config, logEntryCh chan<- *LogEntry) {
 	reader := bufio.NewReader(os.Stdin)
 
 	line, readErr := reader.ReadBytes('\n')
@@ -40,7 +40,7 @@ func readAndParseStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
 	for readErr == nil {
 		lineCount++
 
-		logEntry := parseLogLine(line, lineCount)
+		logEntry := parseLogLine(line, lineCount, config)
 		sendToPrinter(ctx, logEntryCh, logEntry)
 
 		line, readErr = reader.ReadBytes('\n')
@@ -49,7 +49,7 @@ func readAndParseStdin(ctx context.Context, logEntryCh chan<- *LogEntry) {
 	close(logEntryCh)
 }
 
-func parseLogLine(line []byte, lineCount int) *LogEntry {
+func parseLogLine(line []byte, lineCount int, config Config) *LogEntry {
 	logEntry := &LogEntry{
 		LineNumber:      lineCount,
 		OriginalLogLine: line,
@@ -61,7 +61,7 @@ func parseLogLine(line []byte, lineCount int) *LogEntry {
 	if err := json.Unmarshal(line, &parsedLogLine); err != nil {
 		logEntry.setOriginalLogLine(line)
 	} else {
-		logEntry.setFromJsonMap(parsedLogLine)
+		logEntry.setFromJsonMap(parsedLogLine, *config.Keywords)
 	}
 
 	if isDebug() {
