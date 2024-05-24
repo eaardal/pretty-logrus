@@ -51,7 +51,9 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
-		field := fmt.Sprintf("%s=[%s]", applyFieldNameStyle(fieldName, config.FieldStyles), applyFieldValueStyle(fieldName, value, config.FieldStyles))
+		styledFieldName := applyFieldNameStyle(fieldName, config.FieldStyles, args.HighlightKey)
+		styledFieldValue := applyFieldValueStyle(fieldName, value, config.FieldStyles, args.HighlightValue)
+		field := fmt.Sprintf("%s=[%s]", styledFieldName, styledFieldValue)
 		fields = append(fields, field)
 	}
 
@@ -86,7 +88,9 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
-		field := fmt.Sprintf("  %s: %s", applyFieldNameStyle(fieldName, config.FieldStyles), applyFieldValueStyle(fieldName, value, config.FieldStyles))
+		styledFieldName := applyFieldNameStyle(fieldName, config.FieldStyles, args.HighlightKey)
+		styledFieldValue := applyFieldValueStyle(fieldName, value, config.FieldStyles, args.HighlightValue)
+		field := fmt.Sprintf("  %s: %s", styledFieldName, styledFieldValue)
 		fields = append(fields, field)
 	}
 

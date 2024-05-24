@@ -58,6 +58,20 @@
         "fgColor": "fgHiCyan"
       }
     },
+    "highlight": {
+      "key": {
+        "fgColor": "fgHiRed",
+        "bold": true,
+        "italic": true,
+        "underline": true
+      },
+      "value":{
+        "fgColor": "fgHiRed",
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
     "trace.id": {
       "key": {
         "fgColor": "fgHiRed",

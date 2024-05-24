@@ -1,36 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/fatih/color"
 	"strings"
 )
-
-type ColorStringFn func(format string, a ...interface{}) string
-type ColorFn func(format string, a ...interface{})
-
-func NoColor(format string, a ...interface{}) string {
-	return fmt.Sprintf(format, a...)
-}
-
-var colorCodeStrings = map[string]ColorStringFn{
-	"black":     color.BlackString,
-	"red":       color.RedString,
-	"green":     color.GreenString,
-	"yellow":    color.YellowString,
-	"blue":      color.BlueString,
-	"magenta":   color.MagentaString,
-	"cyan":      color.CyanString,
-	"white":     color.WhiteString,
-	"hiBlack":   color.HiBlackString,
-	"hiRed":     color.HiRedString,
-	"hiGreen":   color.HiGreenString,
-	"hiYellow":  color.HiYellowString,
-	"hiBlue":    color.HiBlueString,
-	"hiMagenta": color.HiMagentaString,
-	"hiCyan":    color.HiCyanString,
-	"hiWhite":   color.HiWhiteString,
-}
 
 var colorCodes = map[string]color.Attribute{
 	"bgBlack":   color.BgBlack,
@@ -174,7 +147,7 @@ func applyLevelStyle(level string, styles map[string]Style) string {
 	return applyStyles(&style).Sprint(level)
 }
 
-func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle) string {
+func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle, highlightKey string) string {
 	defaultFieldName := yellow(fieldName)
 
 	if styles == nil {
@@ -185,6 +158,11 @@ func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle) stri
 	defaultStyles, ok := styles["default"]
 	if ok && defaultStyles.Key != nil {
 		defaultFieldName = applyStyles(defaultStyles.Key).Sprint(fieldName)
+	}
+
+	highlightedFieldName, highlighted := tryApplyHighlightStyle(fieldName, highlightKey, styles, func(s KeyValueStyle) *Style { return s.Key })
+	if highlighted {
+		return highlightedFieldName
 	}
 
 	style := findKeyValueStyle(styles, fieldName)
@@ -203,7 +181,7 @@ func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle) stri
 	return applyStyles(fieldNameStyle).Sprint(fieldName)
 }
 
-func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyValueStyle) string {
+func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyValueStyle, highlightValue string) string {
 	defaultFieldValue := green(fieldValue)
 
 	if styles == nil {
@@ -214,6 +192,11 @@ func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyVal
 	defaultStyles, ok := styles["default"]
 	if ok && defaultStyles.Key != nil {
 		defaultFieldValue = applyStyles(defaultStyles.Key).Sprint(fieldName)
+	}
+
+	highlightedFieldValue, highlighted := tryApplyHighlightStyle(fieldValue, highlightValue, styles, func(s KeyValueStyle) *Style { return s.Value })
+	if highlighted {
+		return highlightedFieldValue
 	}
 
 	style := findKeyValueStyle(styles, fieldName)
@@ -229,7 +212,6 @@ func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyVal
 	}
 
 	logDebug("Applying styles %+v for field %s\n", fieldValueStyle, fieldValue)
-
 	return applyStyles(fieldValueStyle).Sprint(fieldValue)
 }
 
@@ -325,4 +307,50 @@ func findStyle(styles map[string]Style, fieldName string) *Style {
 	}
 
 	return nil
+}
+
+func tryApplyHighlightStyle(value string, highlight string, styles map[string]KeyValueStyle, selectStyle func(s KeyValueStyle) *Style) (string, bool) {
+	if highlight == "" {
+		return value, false
+	}
+
+	defaultHlStyle := color.New(color.FgHiRed, color.Bold, color.Italic, color.Underline)
+
+	applyHighlightStyle := func(value string) string {
+		hlStyle, hasHlStyle := styles["highlight"]
+		if hasHlStyle && selectStyle(hlStyle) != nil {
+			return applyStyles(selectStyle(hlStyle)).Sprint(value)
+		}
+		return defaultHlStyle.Sprint(value)
+	}
+
+	if highlight == value {
+		return applyHighlightStyle(value), true
+	}
+
+	if strings.HasPrefix(highlight, "*") {
+		cleanKey := strings.TrimPrefix(highlight, "*")
+
+		if strings.HasSuffix(value, cleanKey) {
+			return applyHighlightStyle(value), true
+		}
+	}
+
+	if strings.HasSuffix(highlight, "*") {
+		cleanKey := strings.TrimSuffix(highlight, "*")
+
+		if strings.HasPrefix(value, cleanKey) {
+			return applyHighlightStyle(value), true
+		}
+	}
+
+	if strings.HasPrefix(highlight, "*") && strings.HasSuffix(highlight, "*") {
+		cleanKey := strings.Trim(highlight, "*")
+
+		if strings.Contains(value, cleanKey) {
+			return applyHighlightStyle(value), true
+		}
+	}
+
+	return value, false
 }

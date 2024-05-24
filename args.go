@@ -13,6 +13,8 @@ type Args struct {
 	ExcludedFields map[string]struct{}
 	Truncate       *Truncate
 	WhereFields    map[string]string
+	HighlightKey   string
+	HighlightValue string
 }
 
 func parseArgs() *Args {
@@ -25,6 +27,8 @@ func parseArgs() *Args {
 	args.ExcludedFields = parseExceptArg()
 	args.Truncate = parseTruncArg()
 	args.WhereFields = parseWhereArg()
+	args.HighlightKey = parseHighlightKey()
+	args.HighlightValue = parseHighlightValue()
 
 	if isDebug() {
 		fmt.Printf("Raw args/flags: %+v\n", os.Args)
@@ -33,9 +37,25 @@ func parseArgs() *Args {
 		fmt.Printf("Excluded fields: %+v\n", args.ExcludedFields)
 		fmt.Printf("Truncate: %+v\n", args.Truncate)
 		fmt.Printf("Where: %+v\n", args.WhereFields)
+		fmt.Printf("Highlight key: %s\n", args.HighlightKey)
+		fmt.Printf("Highlight value: %s\n", args.HighlightValue)
 	}
 
 	return args
+}
+
+func parseHighlightKey() string {
+	if highlightKey != nil {
+		return *highlightKey
+	}
+	return ""
+}
+
+func parseHighlightValue() string {
+	if highlightValue != nil {
+		return *highlightValue
+	}
+	return ""
 }
 
 func parseFieldArg() map[string]struct{} {

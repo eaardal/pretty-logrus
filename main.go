@@ -15,6 +15,8 @@ var exceptFieldsFilter = flag.String("except", "", "Don't show this particular f
 var truncateFlag = flag.String("trunc", "", "Truncate the content of this field by x number of characters. Example: --trunc message=50")
 var whereFlag = flag.String("where", "", "Filter log entries based on a condition. Example: --where trace.id=abc")
 var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
+var highlightKey = flag.String("highlight-key", "", "Highlight the specified key in the output")
+var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
 
 func main() {
 	flag.Parse()
