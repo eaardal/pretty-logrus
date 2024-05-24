@@ -76,10 +76,14 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 	sort.Strings(fields)
 	fieldsString := strings.Join(fields, ", ")
 
+	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
+	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
+	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
+
 	if len(fields) > 0 {
-		fmt.Printf("[%s] %s - %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles), fieldsString)
+		fmt.Printf("[%s] %s - %s - %s\n", level, timestamp, message, fieldsString)
 	} else {
-		fmt.Printf("[%s] %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles))
+		fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
 	}
 }
 
@@ -113,7 +117,11 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 	sort.Strings(fields)
 	fieldsString := strings.Join(fields, "\n")
 
-	fmt.Printf("[%s] %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles))
+	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
+	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
+	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
+
+	fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
 
 	if len(fields) > 0 {
 		fmt.Println(fieldsString)

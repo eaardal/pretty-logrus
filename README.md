@@ -16,7 +16,7 @@ Usage:
 kubectl logs <pod> | plr
 ```
 
-Options:
+## Options:
 
 - `--multi-line`: Print output on multiple lines with log message and level first and then each field/data-entry on separate lines
 - `--no-data`: Don't show logged data fields (additional key-value pairs of arbitrary data)
@@ -35,6 +35,12 @@ Options:
   - `--where <field>=<value>`: Only show log messages where the specific field has the given value
   - `--where <field>=<value>,<field>=<value>`: Specify multiple conditions separated by comma
   - `--where <value>`: Only show log messages where the value occurs in any data field or the message field. Value can be a partial phrase or text.
+- `--highlight-key <field>`: Highlight the key of the field in the output. Field name can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+- `--highlight-value <field value>`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+
+## Configuration file
+
+See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the configuration file.
 
 # Changelog
 
@@ -43,6 +49,20 @@ Options:
 > :bug: - Bug fixes  
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
+
+## v1.2.0
+
+:calendar: 2024-05-24
+
+- :sparkles: Added a configuration file to customize various aspects of the app, like the text styles. See the [configuration file spec](./CONFIG_FILE_SPEC.md) for more information.
+- :sparkles: Added `--highlight-key` and `--highlight-value` flags to highlight specific fields or values in the output.
+
+## v1.1.6
+
+:calendar: 2024-05-24
+
+- :hammer_and_wrench: Fields are sorted alphabetically.
+- :hammer_and_wrench: Include (`--field`, `--fields`) and exclude (`--except`) flags can now take a wildcard `*` to match several fields at once.
 
 ## v1.1.5
 
