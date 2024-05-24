@@ -1,0 +1,78 @@
+{
+  "levelStyles": {
+    "default": {
+      "fgColor": "fgGreen"
+    },
+    "trace": {
+      "fgColor": "fgHiGreen",
+      "bgColor": "bgBlack"
+    },
+    "debug": {
+      "fgColor": "fgHiGreen",
+      "bgColor": "bgBlack"
+    },
+    "info": {
+      "fgColor": "fgHiGreen",
+      "bgColor": "bgBlack"
+    },
+    "warn": {
+      "fgColor": "fgHiYellow",
+      "bgColor": "bgBlack"
+    },
+    "error": {
+      "fgColor": "fgHiRed",
+      "bgColor": "bgBlack"
+    },
+    "fatal": {
+      "fgColor": "fgHiRed",
+      "bgColor": "bgBlack"
+    }
+  },
+  "timestampStyles": {
+    "default": {
+      "fgColor": "fgHiBlack",
+      "bgColor": "bgHiGreen"
+    }
+  },
+  "messageStyles": {
+    "default": {
+      "fgColor": "fgHiRed",
+      "bold": true,
+      "italic": true,
+      "underline": true
+    }
+  },
+  "fieldStyles": {
+    "trace.id": {
+      "key": {
+        "fgColor": "fgHiRed",
+        "bgColor": "bgHiBlack"
+      },
+      "value":{
+        "fgColor": "fgBlack",
+        "bgColor": "bgHiGreen",
+        "bold": true,
+        "italic": true,
+        "underline": true
+      }
+    },
+    "log.*": {
+      "key": {
+        "fgColor": "fgWhite"
+      },
+      "value":{
+        "fgColor": "fgWhite"
+      }
+    },
+    "labels.*": {
+      "key": {
+        "fgColor": "fgHiMagenta"
+      },
+      "value":{
+        "fgColor": "fgHiGreen",
+        "bold": true,
+        "italic": true
+      }
+    }
+  }
+}

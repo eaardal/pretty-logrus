@@ -15,7 +15,7 @@ var green = color.GreenString
 var white = color.WhiteString
 var red = color.RedString
 
-func printLogEntries(ctx context.Context, args Args, logEntries <-chan *LogEntry) {
+func printLogEntries(ctx context.Context, args Args, config Config, logEntries <-chan *LogEntry) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -38,20 +38,20 @@ func printLogEntries(ctx context.Context, args Args, logEntries <-chan *LogEntry
 			}
 
 			if multiLine != nil && *multiLine {
-				printMultiLine(args, logEntry)
+				printMultiLine(args, config, logEntry)
 			} else {
-				printSingleLine(args, logEntry)
+				printSingleLine(args, config, logEntry)
 			}
 		}
 	}
 }
 
-func printSingleLine(args Args, logEntry *LogEntry) {
+func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
-		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(value))
+		field := fmt.Sprintf("%s=[%s]", applyFieldNameStyle(fieldName, config.FieldStyles), applyFieldValueStyle(fieldName, value, config.FieldStyles))
 		fields = append(fields, field)
 	}
 
@@ -75,18 +75,18 @@ func printSingleLine(args Args, logEntry *LogEntry) {
 	fieldsString := strings.Join(fields, ", ")
 
 	if len(fields) > 0 {
-		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)), fieldsString)
+		fmt.Printf("[%s] %s - %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles), fieldsString)
 	} else {
-		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)))
+		fmt.Printf("[%s] %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles))
 	}
 }
 
-func printMultiLine(args Args, logEntry *LogEntry) {
+func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
-		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", value)))
+		field := fmt.Sprintf("  %s: %s", applyFieldNameStyle(fieldName, config.FieldStyles), applyFieldValueStyle(fieldName, value, config.FieldStyles))
 		fields = append(fields, field)
 	}
 
@@ -109,7 +109,7 @@ func printMultiLine(args Args, logEntry *LogEntry) {
 	sort.Strings(fields)
 	fieldsString := strings.Join(fields, "\n")
 
-	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)))
+	fmt.Printf("[%s] %s - %s\n", applyLevelStyle(logEntry.Level, config.LevelStyles), applyTimestampStyle(logEntry.Time, config.TimestampStyles), applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles))
 
 	if len(fields) > 0 {
 		fmt.Println(fieldsString)
@@ -118,9 +118,7 @@ func printMultiLine(args Args, logEntry *LogEntry) {
 
 func isFieldInList(list map[string]struct{}, fieldName string) bool {
 	if _, found := list[fieldName]; found {
-		if isDebug() {
-			fmt.Printf("Field '%s' is explicitly in list\n", fieldName)
-		}
+		logDebug("Field '%s' is explicitly in list\n", fieldName)
 		return true
 	}
 
@@ -129,9 +127,7 @@ func isFieldInList(list map[string]struct{}, fieldName string) bool {
 			cleanKey := strings.TrimSuffix(key, "*")
 
 			if strings.HasPrefix(fieldName, cleanKey) {
-				if isDebug() {
-					fmt.Printf("Field '%s' is in list because of trailing wildcard '%s'\n", fieldName, key)
-				}
+				logDebug("Field '%s' is in list because of trailing wildcard '%s'\n", fieldName, key)
 				return true
 			}
 		}
@@ -140,9 +136,7 @@ func isFieldInList(list map[string]struct{}, fieldName string) bool {
 			cleanKey := strings.TrimPrefix(key, "*")
 
 			if strings.HasSuffix(fieldName, cleanKey) {
-				if isDebug() {
-					fmt.Printf("Field '%s' is in list because of leading wildcard '%s'\n", fieldName, key)
-				}
+				logDebug("Field '%s' is in list because of leading wildcard '%s'\n", fieldName, key)
 				return true
 			}
 		}
@@ -151,9 +145,7 @@ func isFieldInList(list map[string]struct{}, fieldName string) bool {
 			cleanKey := strings.Trim(key, "*")
 
 			if strings.Contains(fieldName, cleanKey) {
-				if isDebug() {
-					fmt.Printf("Field '%s' is in list because of leading and trailing wildcard '%s'\n", fieldName, key)
-				}
+				logDebug("Field '%s' is in list because of leading and trailing wildcard '%s'\n", fieldName, key)
 				return true
 			}
 		}
@@ -163,20 +155,6 @@ func isFieldInList(list map[string]struct{}, fieldName string) bool {
 		fmt.Printf("Field '%s' is not in list found\n", fieldName)
 	}
 	return false
-}
-
-func formatLevel(entry *LogEntry) string {
-	level := cyan(entry.Level)
-
-	if entry.Level == "warning" {
-		level = yellow(entry.Level)
-	}
-
-	if entry.Level == "error" || entry.Level == "fatal" {
-		level = red(entry.Level)
-	}
-
-	return level
 }
 
 func fmtValue(truncate *Truncate, key, value string) string {

@@ -20,6 +20,7 @@ func main() {
 	flag.Parse()
 
 	args := parseArgs()
+	config := readConfigFile()
 
 	ctx := context.Background()
 	logEntryCh := make(chan *LogEntry, 1)
@@ -29,7 +30,7 @@ func main() {
 
 	go func() {
 		defer wg.Done()
-		printLogEntries(ctx, *args, logEntryCh)
+		printLogEntries(ctx, *args, *config, logEntryCh)
 	}()
 
 	readStdin(ctx, logEntryCh)
