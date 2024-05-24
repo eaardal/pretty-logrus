@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/fatih/color"
+	"sort"
 	"strings"
 )
 
@@ -46,16 +47,17 @@ func printLogEntries(ctx context.Context, args Args, logEntries <-chan *LogEntry
 }
 
 func printSingleLine(args Args, logEntry *LogEntry) {
-	fields := ""
+	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
 		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(value))
-		if fields == "" {
-			fields = field
-		} else {
-			fields = fmt.Sprintf("%s, %s", fields, field)
-		}
+		fields = append(fields, field)
+		//if len(fields) == 0 {
+		//	fields = append(fields, field)
+		//} else {
+		//	fields = append(fields, fmt.Sprintf("%s, %s", fields, field))
+		//}
 	}
 
 	if noData == nil || *noData == false {
@@ -74,24 +76,29 @@ func printSingleLine(args Args, logEntry *LogEntry) {
 		}
 	}
 
+	sort.Strings(fields)
+	fieldsString := strings.Join(fields, ", ")
+	//log.Printf("fieldsString: %s", fieldsString)
+
 	if len(fields) > 0 {
-		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)), fields)
+		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)), fieldsString)
 	} else {
 		fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)))
 	}
 }
 
 func printMultiLine(args Args, logEntry *LogEntry) {
-	fields := ""
+	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
 		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", value)))
-		if fields == "" {
-			fields = field
-		} else {
-			fields = fmt.Sprintf("%s\n%s", fields, field)
-		}
+		fields = append(fields, field)
+		//if len(fields) == 0 {
+		//	fields = append(fields, field)
+		//} else {
+		//	fields = append(fields, fmt.Sprintf("%s\n%s", fields, field))
+		//}
 	}
 
 	if noData == nil || *noData == false {
@@ -110,10 +117,13 @@ func printMultiLine(args Args, logEntry *LogEntry) {
 		}
 	}
 
+	sort.Strings(fields)
+	fieldsString := strings.Join(fields, "\n")
+
 	fmt.Printf("[%s] %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)))
 
 	if len(fields) > 0 {
-		fmt.Println(fields)
+		fmt.Println(fieldsString)
 	}
 }
 
