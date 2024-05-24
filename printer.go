@@ -53,21 +53,16 @@ func printSingleLine(args Args, logEntry *LogEntry) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
 		field := fmt.Sprintf("%s=[%s]", yellow(fieldName), green(value))
 		fields = append(fields, field)
-		//if len(fields) == 0 {
-		//	fields = append(fields, field)
-		//} else {
-		//	fields = append(fields, fmt.Sprintf("%s, %s", fields, field))
-		//}
 	}
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
 			if len(args.IncludedFields) > 0 {
-				if _, included := args.IncludedFields[fieldName]; included {
+				if isFieldInList(args.IncludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
 			} else if len(args.ExcludedFields) > 0 {
-				if _, excluded := args.ExcludedFields[fieldName]; !excluded {
+				if !isFieldInList(args.ExcludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
 			} else {
@@ -78,7 +73,6 @@ func printSingleLine(args Args, logEntry *LogEntry) {
 
 	sort.Strings(fields)
 	fieldsString := strings.Join(fields, ", ")
-	//log.Printf("fieldsString: %s", fieldsString)
 
 	if len(fields) > 0 {
 		fmt.Printf("[%s] %s - %s - %s\n", formatLevel(logEntry), blue(logEntry.Time), white(fmtMessage(args.Truncate, logEntry.Message)), fieldsString)
@@ -94,21 +88,16 @@ func printMultiLine(args Args, logEntry *LogEntry) {
 		value := fmtValue(args.Truncate, fieldName, fieldValue)
 		field := fmt.Sprintf("  %s: %s", yellow(fieldName), green(fmt.Sprintf("%v", value)))
 		fields = append(fields, field)
-		//if len(fields) == 0 {
-		//	fields = append(fields, field)
-		//} else {
-		//	fields = append(fields, fmt.Sprintf("%s\n%s", fields, field))
-		//}
 	}
 
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
 			if len(args.IncludedFields) > 0 {
-				if _, included := args.IncludedFields[fieldName]; included {
+				if isFieldInList(args.IncludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
 			} else if len(args.ExcludedFields) > 0 {
-				if _, excluded := args.ExcludedFields[fieldName]; !excluded {
+				if !isFieldInList(args.ExcludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
 			} else {
@@ -125,6 +114,55 @@ func printMultiLine(args Args, logEntry *LogEntry) {
 	if len(fields) > 0 {
 		fmt.Println(fieldsString)
 	}
+}
+
+func isFieldInList(list map[string]struct{}, fieldName string) bool {
+	if _, found := list[fieldName]; found {
+		if isDebug() {
+			fmt.Printf("Field '%s' is explicitly in list\n", fieldName)
+		}
+		return true
+	}
+
+	for key := range list {
+		if strings.HasSuffix(key, "*") {
+			cleanKey := strings.TrimSuffix(key, "*")
+
+			if strings.HasPrefix(fieldName, cleanKey) {
+				if isDebug() {
+					fmt.Printf("Field '%s' is in list because of trailing wildcard '%s'\n", fieldName, key)
+				}
+				return true
+			}
+		}
+
+		if strings.HasPrefix(key, "*") {
+			cleanKey := strings.TrimPrefix(key, "*")
+
+			if strings.HasSuffix(fieldName, cleanKey) {
+				if isDebug() {
+					fmt.Printf("Field '%s' is in list because of leading wildcard '%s'\n", fieldName, key)
+				}
+				return true
+			}
+		}
+
+		if strings.HasPrefix(key, "*") && strings.HasSuffix(key, "*") {
+			cleanKey := strings.Trim(key, "*")
+
+			if strings.Contains(fieldName, cleanKey) {
+				if isDebug() {
+					fmt.Printf("Field '%s' is in list because of leading and trailing wildcard '%s'\n", fieldName, key)
+				}
+				return true
+			}
+		}
+	}
+
+	if isDebug() {
+		fmt.Printf("Field '%s' is not in list found\n", fieldName)
+	}
+	return false
 }
 
 func formatLevel(entry *LogEntry) string {
