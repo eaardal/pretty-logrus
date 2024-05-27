@@ -127,6 +127,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 - :sparkles: Added a configuration file to customize various aspects of the app, like the text styles. See the [configuration file spec](./CONFIG_FILE_SPEC.md) for more information.
 - :sparkles: Added `--highlight-key` and `--highlight-value` flags to highlight specific fields or values in the output.
 
+![](./docs/images/highlight_key_trace_id.png)
+:point_up: Highlighting the key `trace.id` (`--highlight-key trace.id`).
+
+![](./docs/images/highlight_value_abc.png)
+:point_up: Highlighting all values containing `abc` (`--highlight-value "*abc*"`).
+
 ## v1.1.6
 
 :calendar: 2024-05-24
