@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -14,6 +15,9 @@ const (
 	ecsLevelField     = "log.level"
 	ecsTimestampField = "@timestamp"
 )
+
+const DefaultStylesKey = "default"
+const HighlightStylesKey = "highlight"
 
 type Style struct {
 	BgColor   *string
@@ -54,12 +58,60 @@ func hasConfigFile() bool {
 	return !os.IsNotExist(err)
 }
 
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 func readConfigFile() *Config {
 	config := &Config{
-		FieldStyles:     make(map[string]KeyValueStyle),
-		LevelStyles:     make(map[string]Style),
-		MessageStyles:   make(map[string]Style),
-		TimestampStyles: make(map[string]Style),
+		FieldStyles: map[string]KeyValueStyle{
+			DefaultStylesKey: {
+				Key: &Style{
+					FgColor: getColorCode(color.FgYellow),
+				},
+				Value: &Style{
+					FgColor: getColorCode(color.FgGreen),
+				},
+			},
+			HighlightStylesKey: {
+				Key: &Style{
+					FgColor:   getColorCode(color.FgRed),
+					Bold:      boolPtr(true),
+					Italic:    boolPtr(true),
+					Underline: boolPtr(true),
+				},
+				Value: &Style{
+					FgColor:   getColorCode(color.FgRed),
+					Bold:      boolPtr(true),
+					Italic:    boolPtr(true),
+					Underline: boolPtr(true),
+				},
+			},
+		},
+		LevelStyles: map[string]Style{
+			DefaultStylesKey: {
+				FgColor: getColorCode(color.FgCyan),
+			},
+			"warning": {
+				FgColor: getColorCode(color.FgYellow),
+			},
+			"error": {
+				FgColor: getColorCode(color.FgRed),
+			},
+			"err": {
+				FgColor: getColorCode(color.FgRed),
+			},
+		},
+		MessageStyles: map[string]Style{
+			DefaultStylesKey: {
+				FgColor: getColorCode(color.FgWhite),
+			},
+		},
+		TimestampStyles: map[string]Style{
+			DefaultStylesKey: {
+				FgColor: getColorCode(color.FgBlue),
+			},
+		},
 		Keywords: &KeywordConfig{
 			MessageKeywords:   []string{logrus.FieldKeyMsg, ecsMessageField},
 			LevelKeywords:     []string{logrus.FieldKeyLevel, ecsLevelField},

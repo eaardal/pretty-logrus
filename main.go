@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"sync"
 )
 
@@ -18,7 +19,25 @@ var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
 var highlightKey = flag.String("highlight-key", "", "Highlight the specified key in the output")
 var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
 
+var flagAliases = map[string]string{
+	"highlight-key":   "K",
+	"highlight-value": "V",
+	"level":           "L",
+	"field":           "F",
+	"multi-line":      "M",
+	"where":           "W",
+}
+
+func applyFlagAliases() {
+	for long, short := range flagAliases {
+		flagSet := flag.Lookup(long)
+		logDebug("Checking alias %s -> %s: %+v", short, long, flagSet)
+		flag.Var(flagSet.Value, short, fmt.Sprintf("Alias for --%s", long))
+	}
+}
+
 func main() {
+	applyFlagAliases()
 	flag.Parse()
 
 	args := parseArgs()

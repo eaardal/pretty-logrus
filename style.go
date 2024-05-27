@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+func getColorCode(attr color.Attribute) *string {
+	for key, value := range colorCodes {
+		if value == attr {
+			return &key
+		}
+	}
+	empty := ""
+	return &empty
+}
+
 var colorCodes = map[string]color.Attribute{
 	"bgBlack":   color.BgBlack,
 	"bgHiBlack": color.BgHiBlack,
@@ -75,7 +85,7 @@ func applyTimestampStyle(timestamp string, styles map[string]Style) string {
 		return defaultTimestamp
 	}
 
-	defaultStyle, ok := styles["default"]
+	defaultStyle, ok := styles[DefaultStylesKey]
 	if ok {
 		logDebug("Applying default styles %+v for timestamp\n", defaultStyle)
 		defaultTimestamp = applyStyles(&defaultStyle).Sprint(timestamp)
@@ -99,7 +109,7 @@ func applyMessageStyle(message string, styles map[string]Style) string {
 		return defaultMessage
 	}
 
-	defaultStyle, ok := styles["default"]
+	defaultStyle, ok := styles[DefaultStylesKey]
 	if ok {
 		logDebug("Applying default styles %+v for message\n", defaultStyle)
 		defaultMessage = applyStyles(&defaultStyle).Sprint(message)
@@ -131,7 +141,7 @@ func applyLevelStyle(level string, styles map[string]Style) string {
 		return defaultLevel
 	}
 
-	style, ok := styles["default"]
+	style, ok := styles[DefaultStylesKey]
 	if ok {
 		logDebug("Applying default styles %+v for level %s\n", style, level)
 		defaultLevel = applyStyles(&style).Sprint(level)
@@ -155,7 +165,7 @@ func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle, high
 		return defaultFieldName
 	}
 
-	defaultStyles, ok := styles["default"]
+	defaultStyles, ok := styles[DefaultStylesKey]
 	if ok && defaultStyles.Key != nil {
 		defaultFieldName = applyStyles(defaultStyles.Key).Sprint(fieldName)
 	}
@@ -189,9 +199,9 @@ func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyVal
 		return defaultFieldValue
 	}
 
-	defaultStyles, ok := styles["default"]
-	if ok && defaultStyles.Key != nil {
-		defaultFieldValue = applyStyles(defaultStyles.Key).Sprint(fieldName)
+	defaultStyles, ok := styles[DefaultStylesKey]
+	if ok && defaultStyles.Value != nil {
+		defaultFieldValue = applyStyles(defaultStyles.Value).Sprint(fieldValue)
 	}
 
 	highlightedFieldValue, highlighted := tryApplyHighlightStyle(fieldValue, highlightValue, styles, func(s KeyValueStyle) *Style { return s.Value })
