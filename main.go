@@ -26,6 +26,7 @@ var flagAliases = map[string]string{
 	"field":           "F",
 	"multi-line":      "M",
 	"where":           "W",
+	"except":          "E",
 }
 
 func applyFlagAliases() {
