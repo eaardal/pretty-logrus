@@ -2,7 +2,7 @@
 
 Takes JSON-formatted [logrus](https://github.com/sirupsen/logrus) log messages as input and prints them back out in a more human readable format.
 
-Build it:
+### Build it
 
 ```shell
 go build -o plr main.go
@@ -10,11 +10,44 @@ go build -o plr main.go
 
 Put the `plr` executable somewhere on your PATH.
 
-Usage:
+### Usage
 
 ```shell
 kubectl logs <pod> | plr
 ```
+
+#### With [pod-id](https://github.com/eaardal/pod-id)
+
+[Pod-id](https://github.com/eaardal/pod-id) is a small utility to get the pod id from a partial pod name.
+
+It lets you look up pods by a partial name, like this:
+
+```shell
+kubectl logs $(podid my-app)
+```
+
+This shell alias is useful for combining `podid` and `plr`:
+
+```shell
+alias klogs='kubectl logs $(podid $1) | plr'
+```
+
+To also be able to pass arguments to `plr`, replace the alias with this function: 
+
+```bash
+klogs () {
+  local pod_id
+  pod_id=$(podid "$1")
+  shift
+  kubectl logs "$pod_id" | plr "$@"
+}
+
+# Usage examples:
+klogs my-app # prints the logs from the pod where the name contains "my-app". 
+klogs my-app --field trace.id # pretty-logrus arguments work as expected.
+```
+
+> Note: The `klogs` function does not forward arguments to pod-id. If you need to pass arguments to pod-id, you can use the full command: `kubectl logs $(podid my-app <args here>) | plr`.
 
 ## Options:
 
