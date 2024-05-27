@@ -40,7 +40,13 @@ kubectl logs <pod> | plr
 
 ### Wildcard `*`
 
-Several flags support the wildcard `*` to match several fields at once.
+Several flags support the wildcard `*` in their values to match several things at once:
+
+- `--field`
+- `--fields`
+- `--except`
+- `--highlight-key`
+- `--highlight-value`
 
 Usage:
 
