@@ -67,6 +67,13 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.2.2
+
+:calendar: 2024-05-26
+
+- :bug: use `path.Join()` when reading config.json to avoid OS-related file path issues.
+- :bug: misc refactoring and cleanup.
+
 ## v1.2.1
 
 :calendar: 2024-05-26
