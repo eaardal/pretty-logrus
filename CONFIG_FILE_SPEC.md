@@ -20,6 +20,8 @@ The app uses `github.com/fatih/color` for colorizing the output, so [all their c
 
 ![](https://user-images.githubusercontent.com/438920/96832689-03b3e000-13f4-11eb-9803-46f4c4de3406.jpg)
 
+How the colors appear to you depends on your terminal's current theme and color settings.
+
 The available `Colors` are:
 
 (bg = background, fg = foreground, hi = high intensity)
@@ -77,8 +79,8 @@ If you override any of the keyword lists, the defaults will be ignored so you mi
 
 #### Example
 
+config.json
 ```json
-// config.json
 {
   "keywords": {
     "messageKeywords": ["msg", "message"],
@@ -94,15 +96,15 @@ If you override any of the keyword lists, the defaults will be ignored so you mi
 
 Styles for the log level field.
 
-| Field path                     | Description                                                                                                 | Default |
-|--------------------------------|-------------------------------------------------------------------------------------------------------------|---------|
-| `levelStyles.default`          | `Style` object. The default styles applied to the log level field unless a more specific override is found. | `TODO`  |
-| `levelStyles.<YOUR LOG LEVEL>` | `Style` object. Overrides for specific log levels.                                                          | `TODO`  |
+| Field path                     | Description                                                                                                 | Default                                                                                                     |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `levelStyles.default`          | `Style` object. The default styles applied to the log level field unless a more specific override is found. | `{ "fgColor": "fgHiGreen" }`                                                                                |
+| `levelStyles.<YOUR LOG LEVEL>` | `Style` object. Overrides for specific log levels.                                                          | `{ "warning": { "fgColor": "fgYellow" }, "error": { "fgColor": "fgRed" }, "err": { "fgColor": "fgRed" }, }` |
 
 #### Example
 
+config.json
 ```json
-// config.json
 {
   "levelStyles": {
     "default": {
@@ -128,14 +130,14 @@ Styles for the log level field.
 
 ### The `timestampStyles` object
 
-| Field path                         | Description                                                 | Default |
-|------------------------------------|-------------------------------------------------------------|---------|
-| `timestampStyles.default`          | `Style` object. The default styles for the timestamp field. | `TODO`  |
+| Field path                         | Description                                                 | Default                   |
+|------------------------------------|-------------------------------------------------------------|---------------------------|
+| `timestampStyles.default`          | `Style` object. The default styles for the timestamp field. | `{ "fgColor": "fgBlue" }` |
 
 #### Example
 
+config.json
 ```json
-// config.json
 {
   "timestampStyles": {
     "default": {
@@ -148,14 +150,14 @@ Styles for the log level field.
 
 ### The `messageStyles` object
 
-| Field path              | Description                                             | Default |
-|-------------------------|---------------------------------------------------------|---------|
-| `messageStyles.default` | `Style` object. The default styles for the log message. | `TODO`  |
+| Field path              | Description                                             | Default                    |
+|-------------------------|---------------------------------------------------------|----------------------------|
+| `messageStyles.default` | `Style` object. The default styles for the log message. | `{ "fgColor": "fgWhite" }` |
 
 #### Example
 
+config.json
 ```json
-// config.json
 {
   "messageStyles": {
     "default": {
@@ -168,19 +170,21 @@ Styles for the log level field.
 
 ### The `fieldStyles` object
 
-| Field path                            | Description                                                                                       | Default                        |
-|---------------------------------------|---------------------------------------------------------------------------------------------------|--------------------------------|
-| `fieldStyles.default.key`             | `Style` object. The default styles to be applied to the key/name of the field.                    | `TODO`                         |
-| `fieldStyles.default.value`           | `Style` object. The default styles to be applied to the value of the field.                       | `TODO`                         |
-| `fieldStyles.highlight.key`           | `Style` object. The styles to be applied for fields matching the `--highlight-key <FIELD>` arg.   | `TODO`                         |
-| `fieldStyles.highlight.value`         | `Style` object. The styles to be applied for fields matching the `--highlight-value <VALUE>` arg. | `TODO`                         |
-| `fieldStyles.<YOUR FIELD NAME>.key`   | `Style` object. The styles to be applied for key/name for fields matching the name specified.     | `TODO (husk å nevne wildcard)` |
-| `fieldStyles.<YOUR FIELD NAME>.value` | `Style` object. The styles to be applied for values for fields matching the name specified.       | `TODO (husk å nevne wildcard)` |
+| Field path                            | Description                                                                                       | Default                                                                   |
+|---------------------------------------|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| `fieldStyles.default.key`             | `Style` object. The default styles to be applied to the key/name of the field.                    | `{ "fgColor": "fgYellow" }`                                               |
+| `fieldStyles.default.value`           | `Style` object. The default styles to be applied to the value of the field.                       | `{ "fgColor": "fgGreen" }`                                                |
+| `fieldStyles.highlight.key`           | `Style` object. The styles to be applied for fields matching the `--highlight-key <FIELD>` arg.   | `{ "fgColor": "fgRed", "bold": true, "italic": true, "underline": true }` |
+| `fieldStyles.highlight.value`         | `Style` object. The styles to be applied for fields matching the `--highlight-value <VALUE>` arg. | `{ "fgColor": "fgRed", "bold": true, "italic": true, "underline": true }` |
+| `fieldStyles.<YOUR FIELD NAME>.key`   | `Style` object. The styles to be applied for key/name for fields matching the name specified.     | n/a                                                                       |
+| `fieldStyles.<YOUR FIELD NAME>.value` | `Style` object. The styles to be applied for values for fields matching the name specified.       | n/a                                                                       |
+
+When targeting fields, you can use the wildcard `*` to match several fields at once. See [Wildcard](./README.md#wildcard-) and the examples below for more information.
 
 #### Example
 
+config.json
 ```json
-// config.json
 {
   "fieldStyles": {
     "default": {
@@ -227,6 +231,14 @@ Styles for the log level field.
       },
       "value": {
         "fgColor": "fgWhite"
+      }
+    },
+    "*my-stuff*": {
+      "key": {
+        "fgColor:": "fgRed"
+      },
+      "value": {
+        "fgColor": "fgRed"
       }
     }
   }

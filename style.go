@@ -5,6 +5,61 @@ import (
 	"strings"
 )
 
+const DefaultStylesKey = "default"
+const HighlightStylesKey = "highlight"
+
+var DefaultFieldStyles = map[string]KeyValueStyle{
+	DefaultStylesKey: {
+		Key: &Style{
+			FgColor: getColorCode(color.FgYellow),
+		},
+		Value: &Style{
+			FgColor: getColorCode(color.FgGreen),
+		},
+	},
+	HighlightStylesKey: {
+		Key: &Style{
+			FgColor:   getColorCode(color.FgRed),
+			Bold:      boolPtr(true),
+			Italic:    boolPtr(true),
+			Underline: boolPtr(true),
+		},
+		Value: &Style{
+			FgColor:   getColorCode(color.FgRed),
+			Bold:      boolPtr(true),
+			Italic:    boolPtr(true),
+			Underline: boolPtr(true),
+		},
+	},
+}
+
+var DefaultLevelStyles = map[string]Style{
+	DefaultStylesKey: {
+		FgColor: getColorCode(color.FgHiGreen),
+	},
+	"warning": {
+		FgColor: getColorCode(color.FgYellow),
+	},
+	"error": {
+		FgColor: getColorCode(color.FgRed),
+	},
+	"err": {
+		FgColor: getColorCode(color.FgRed),
+	},
+}
+
+var DefaultMessageStyles = map[string]Style{
+	DefaultStylesKey: {
+		FgColor: getColorCode(color.FgWhite),
+	},
+}
+
+var DefaultTimestampStyles = map[string]Style{
+	DefaultStylesKey: {
+		FgColor: getColorCode(color.FgBlue),
+	},
+}
+
 func getColorCode(attr color.Attribute) *string {
 	for key, value := range colorCodes {
 		if value == attr {
@@ -78,11 +133,11 @@ func applyStyles(styles *Style) *color.Color {
 }
 
 func applyTimestampStyle(timestamp string, styles map[string]Style) string {
-	defaultTimestamp := blue(timestamp)
+	defaultTimestamp := color.New().Sprint(timestamp)
 
 	if styles == nil {
-		logDebug("No timestamp styles defined in config\n")
-		return defaultTimestamp
+		logDebug("No timestamp styles defined in config, falling back on defaults\n")
+		styles = DefaultTimestampStyles
 	}
 
 	defaultStyle, ok := styles[DefaultStylesKey]
@@ -91,7 +146,7 @@ func applyTimestampStyle(timestamp string, styles map[string]Style) string {
 		defaultTimestamp = applyStyles(&defaultStyle).Sprint(timestamp)
 	}
 
-	style := findStyle(styles, timestamp)
+	style := findStyleOverride(styles, timestamp)
 	if style == nil {
 		logDebug("No style defined for timestamp %s\n", timestamp)
 		return defaultTimestamp
@@ -102,11 +157,11 @@ func applyTimestampStyle(timestamp string, styles map[string]Style) string {
 }
 
 func applyMessageStyle(message string, styles map[string]Style) string {
-	defaultMessage := white(message)
+	defaultMessage := color.New().Sprint(message)
 
 	if styles == nil {
-		logDebug("No message styles defined in config\n")
-		return defaultMessage
+		logDebug("No message styles defined in config, falling back on defaults\n")
+		styles = DefaultMessageStyles
 	}
 
 	defaultStyle, ok := styles[DefaultStylesKey]
@@ -115,7 +170,7 @@ func applyMessageStyle(message string, styles map[string]Style) string {
 		defaultMessage = applyStyles(&defaultStyle).Sprint(message)
 	}
 
-	style := findStyle(styles, message)
+	style := findStyleOverride(styles, message)
 	if style == nil {
 		logDebug("No style defined for message %s\n", message)
 		return defaultMessage
@@ -126,19 +181,11 @@ func applyMessageStyle(message string, styles map[string]Style) string {
 }
 
 func applyLevelStyle(level string, styles map[string]Style) string {
-	defaultLevel := cyan(level)
-
-	if level == "warning" {
-		defaultLevel = yellow(level)
-	}
-
-	if level == "error" || level == "fatal" {
-		defaultLevel = red(level)
-	}
+	defaultLevel := color.New().Sprint(level)
 
 	if styles == nil {
-		logDebug("No level styles defined in config\n")
-		return defaultLevel
+		logDebug("No level styles defined in config, falling back on defaults\n")
+		styles = DefaultLevelStyles
 	}
 
 	style, ok := styles[DefaultStylesKey]
@@ -158,11 +205,11 @@ func applyLevelStyle(level string, styles map[string]Style) string {
 }
 
 func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle, highlightKey string) string {
-	defaultFieldName := yellow(fieldName)
+	defaultFieldName := color.New().Sprint(fieldName)
 
 	if styles == nil {
-		logDebug("No field styles defined in config\n")
-		return defaultFieldName
+		logDebug("No field styles defined in config, falling back on defaults\n")
+		styles = DefaultFieldStyles
 	}
 
 	defaultStyles, ok := styles[DefaultStylesKey]
@@ -192,11 +239,11 @@ func applyFieldNameStyle(fieldName string, styles map[string]KeyValueStyle, high
 }
 
 func applyFieldValueStyle(fieldName, fieldValue string, styles map[string]KeyValueStyle, highlightValue string) string {
-	defaultFieldValue := green(fieldValue)
+	defaultFieldValue := color.New().Sprint(fieldValue)
 
 	if styles == nil {
-		logDebug("No field styles defined in config\n")
-		return defaultFieldValue
+		logDebug("No field styles defined in config, falling back on defaults\n")
+		styles = DefaultFieldStyles
 	}
 
 	defaultStyles, ok := styles[DefaultStylesKey]
@@ -272,7 +319,7 @@ func findKeyValueStyle(styles map[string]KeyValueStyle, fieldName string) *KeyVa
 	return nil
 }
 
-func findStyle(styles map[string]Style, fieldName string) *Style {
+func findStyleOverride(styles map[string]Style, fieldName string) *Style {
 	style, ok := styles[fieldName]
 	if ok {
 		return &style

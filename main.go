@@ -41,7 +41,7 @@ func main() {
 	flag.Parse()
 
 	args := parseArgs()
-	config := readConfigFile()
+	config := getConfig()
 
 	ctx := context.Background()
 	logEntryCh := make(chan *LogEntry, 1)

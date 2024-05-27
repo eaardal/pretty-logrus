@@ -31,14 +31,15 @@ func parseArgs() *Args {
 	args.HighlightValue = parseHighlightValue()
 
 	if isDebug() {
-		fmt.Printf("Raw args/flags: %+v\n", os.Args)
-		fmt.Printf("Parsed args/flags:\n")
-		fmt.Printf("Included fields: %+v\n", args.IncludedFields)
-		fmt.Printf("Excluded fields: %+v\n", args.ExcludedFields)
-		fmt.Printf("Truncate: %+v\n", args.Truncate)
-		fmt.Printf("Where: %+v\n", args.WhereFields)
-		fmt.Printf("Highlight key: %s\n", args.HighlightKey)
-		fmt.Printf("Highlight value: %s\n", args.HighlightValue)
+		fmt.Printf("CLI Arguments:\n")
+		fmt.Printf("  Raw args/flags: %+v\n", os.Args)
+		fmt.Printf("  Parsed args/flags:\n")
+		fmt.Printf("    Included fields: %+v\n", args.IncludedFields)
+		fmt.Printf("    Excluded fields: %+v\n", args.ExcludedFields)
+		fmt.Printf("    Truncate: %+v\n", args.Truncate)
+		fmt.Printf("    Where: %+v\n", args.WhereFields)
+		fmt.Printf("    Highlight key: %s\n", args.HighlightKey)
+		fmt.Printf("    Highlight value: %s\n", args.HighlightValue)
 	}
 
 	return args

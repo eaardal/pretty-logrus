@@ -18,12 +18,12 @@ kubectl logs <pod> | plr
 
 ## Options:
 
-- `--multi-line`: Print output on multiple lines with log message and level first and then each field/data-entry on separate lines
+- `--multi-line | -M`: Print output on multiple lines with log message and level first and then each field/data-entry on separate lines
 - `--no-data`: Don't show logged data fields (additional key-value pairs of arbitrary data)
-- `--level <level>`: Only show log messages with matching level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
-- `--field <field>`: Only show this specific data field
-- `--fields <field>,<field>`: Only show specific data fields separated by comma
-- `--except <field>,<field>`: Don't show this particular field or fields separated by comma
+- `--level <level> | -L`: Only show log messages with matching level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
+- `--field <field> | -F`: Only show this specific data field. Field name can have leading and/or trailing wildcard `*`.
+- `--fields <field>,<field>`: Only show specific data fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
+- `--except <field>,<field>`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
 - `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring. Several usage examples:
   - `--trunc message=50`: Print the first 50 characters in the message field
   - `--trunc message="\n"`: Print everything up until the first line break in the message field
@@ -31,12 +31,29 @@ kubectl logs <pod> | plr
   - `--trunc message=mytext`: Print everything up until the first occurrence of the phrase 'mytext' in the message field.
   - `--trunc message="stop it"`: Print everything up until the first occurrence of the phrase 'stop it' in the message field.
   - `--trunc message=" "`: Print everything up until the first empty space in the message field.
-- `--where <field>=<value>`: Only show log messages where the value occurs. Several usage examples:
+- `--where <field>=<value> | -W`: Only show log messages where the value occurs. Several usage examples:
   - `--where <field>=<value>`: Only show log messages where the specific field has the given value
   - `--where <field>=<value>,<field>=<value>`: Specify multiple conditions separated by comma
   - `--where <value>`: Only show log messages where the value occurs in any data field or the message field. Value can be a partial phrase or text.
-- `--highlight-key <field>`: Highlight the key of the field in the output. Field name can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
-- `--highlight-value <field value>`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+- `--highlight-key <field> | -K`: Highlight the key of the field in the output. Field name can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+- `--highlight-value <field value> | -V`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+
+### Wildcard `*`
+
+Several flags support the wildcard `*` to match several fields at once.
+
+Usage:
+
+- Leading: `--arg "*foo"` will match phrases ending with "foo" (case sensitive).
+- Trailing: `--arg "foo*"` will match phrases starting with "foo" (case sensitive).
+- Both: `--arg "*foo*"` will match phrases containing "foo" (case sensitive).
+
+Gotcha 1: You might need to quote the string:
+
+`--arg labels.* ` might give the output `zsh: no matches found: labels.*` whereas
+`--arg "labels.*"` will filter on fields beginning with the phrase "labels.".
+
+Gotcha 2: it's case sensitive. For example when searching for values with `--highlight-value` like `--highlight-value "my-service*"`, "my-service" will be matched as-is. 
 
 ## Configuration file
 
@@ -49,6 +66,13 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :bug: - Bug fixes  
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
+
+## v1.2.1
+
+:calendar: 2024-05-26
+
+- :hammer_and_wrench: Add shorthand aliases to some CLI arguments.
+- :bug: Fix various style-related bugs.
 
 ## v1.2.0
 
