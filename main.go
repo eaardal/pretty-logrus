@@ -10,7 +10,6 @@ import (
 var multiLine = flag.Bool("multi-line", false, "Print output on multiple lines with log message and level first and then each field/data-entry on separate lines")
 var noData = flag.Bool("no-data", false, "Don't show data fields (additional key-value pairs of arbitrary data)")
 var levelFilter = flag.String("level", "", "Only show log messages with matching level. Values (logrus levels): trace|debug|info|warning|error|fatal|panic")
-var fieldFilter = flag.String("field", "", "Only show this specific data field")
 var fieldsFilter = flag.String("fields", "", "Only show specific data fields separated by comma")
 var exceptFieldsFilter = flag.String("except", "", "Don't show this particular field or fields separated by comma")
 var truncateFlag = flag.String("trunc", "", "Truncate the content of this field by x number of characters. Example: --trunc message=50")
@@ -20,13 +19,13 @@ var highlightKey = flag.String("highlight-key", "", "Highlight the specified key
 var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
 
 var flagAliases = map[string]string{
+	"multi-line":      "M",
+	"level":           "L",
+	"fields":          "F",
+	"except":          "E",
+	"where":           "W",
 	"highlight-key":   "K",
 	"highlight-value": "V",
-	"level":           "L",
-	"field":           "F",
-	"multi-line":      "M",
-	"where":           "W",
-	"except":          "E",
 }
 
 func applyFlagAliases() {

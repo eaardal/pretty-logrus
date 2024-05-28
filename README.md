@@ -16,7 +16,7 @@ Put the `plr` executable somewhere on your PATH.
 kubectl logs <pod> | plr
 ```
 
-#### With [pod-id](https://github.com/eaardal/pod-id)
+#### Usage together with [pod-id](https://github.com/eaardal/pod-id)
 
 [Pod-id](https://github.com/eaardal/pod-id) is a small utility to get the pod id from a partial pod name.
 
@@ -56,7 +56,7 @@ klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 - `--level <level> | -L`: Only show log messages with matching level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
 - `--field <field> | -F`: Only show this specific data field. Field name can have leading and/or trailing wildcard `*`.
 - `--fields <field>,<field>`: Only show specific data fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
-- `--except <field>,<field>`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
+- `--except <field>,<field> | -E`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
 - `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring. Several usage examples:
   - `--trunc message=50`: Print the first 50 characters in the message field
   - `--trunc message="\n"`: Print everything up until the first line break in the message field

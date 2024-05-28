@@ -96,10 +96,10 @@ config.json
 
 Styles for the log level field.
 
-| Field path                     | Description                                                                                                 | Default                                                                                                     |
-|--------------------------------|-------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------|
-| `levelStyles.default`          | `Style` object. The default styles applied to the log level field unless a more specific override is found. | `{ "fgColor": "fgHiGreen" }`                                                                                |
-| `levelStyles.<YOUR LOG LEVEL>` | `Style` object. Overrides for specific log levels.                                                          | `{ "warning": { "fgColor": "fgYellow" }, "error": { "fgColor": "fgRed" }, "err": { "fgColor": "fgRed" }, }` |
+| Field path                     | Description                                                                                                 | Default                                                                                                                                                                                                                                                                                  |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `levelStyles.default`          | `Style` object. The default styles applied to the log level field unless a more specific override is found. | `{ "fgColor": "fgHiGreen" }`                                                                                                                                                                                                                                                             |
+| `levelStyles.<YOUR LOG LEVEL>` | `Style` object. Overrides for specific log levels.                                                          | `{ "trace": { "fgColor": "fgWhite" }, "debug": { "fgColor": "fgWhite" }, "info": { "fgColor": "fgHiGreen" }, "warning": { "fgColor": "fgYellow" }, "error": { "fgColor": "fgRed" }, "err": { "fgColor": "fgRed" },  "fatal": { "fgColor": "fgRed" },  "panic": { "fgColor": "fgRed" } }` |
 
 #### Example
 

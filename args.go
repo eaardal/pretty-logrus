@@ -20,10 +20,7 @@ type Args struct {
 func parseArgs() *Args {
 	args := &Args{}
 
-	args.IncludedFields = parseFieldArg()
-	if args.IncludedFields == nil {
-		args.IncludedFields = parseFieldsArg()
-	}
+	args.IncludedFields = parseFieldsArg()
 	args.ExcludedFields = parseExceptArg()
 	args.Truncate = parseTruncArg()
 	args.WhereFields = parseWhereArg()
@@ -57,15 +54,6 @@ func parseHighlightValue() string {
 		return *highlightValue
 	}
 	return ""
-}
-
-func parseFieldArg() map[string]struct{} {
-	if fieldFilter != nil && *fieldFilter != "" {
-		includedFields := make(map[string]struct{})
-		includedFields[*fieldFilter] = struct{}{}
-		return includedFields
-	}
-	return nil
 }
 
 func parseFieldsArg() map[string]struct{} {

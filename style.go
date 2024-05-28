@@ -37,6 +37,15 @@ var DefaultLevelStyles = map[string]Style{
 	DefaultStylesKey: {
 		FgColor: getColorCode(color.FgHiGreen),
 	},
+	"trace": {
+		FgColor: getColorCode(color.FgWhite),
+	},
+	"debug": {
+		FgColor: getColorCode(color.FgCyan),
+	},
+	"info": {
+		FgColor: getColorCode(color.FgHiGreen),
+	},
 	"warning": {
 		FgColor: getColorCode(color.FgYellow),
 	},
@@ -44,6 +53,12 @@ var DefaultLevelStyles = map[string]Style{
 		FgColor: getColorCode(color.FgRed),
 	},
 	"err": {
+		FgColor: getColorCode(color.FgRed),
+	},
+	"fatal": {
+		FgColor: getColorCode(color.FgRed),
+	},
+	"panic": {
 		FgColor: getColorCode(color.FgRed),
 	},
 }
