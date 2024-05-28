@@ -51,31 +51,35 @@ klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 
 ## Options:
 
-- `--multi-line | -M`: Print output on multiple lines with log message and level first and then each field/data-entry on separate lines
-- `--no-data`: Don't show logged data fields (additional key-value pairs of arbitrary data)
-- `--level <level> | -L`: Only show log messages with matching level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
-- `--field <field> | -F`: Only show this specific data field. Field name can have leading and/or trailing wildcard `*`.
-- `--fields <field>,<field>`: Only show specific data fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
-- `--except <field>,<field> | -E`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
-- `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring. Several usage examples:
-  - `--trunc message=50`: Print the first 50 characters in the message field
-  - `--trunc message="\n"`: Print everything up until the first line break in the message field
-  - `--trunc message="\t"`: Print everything up until the first tab character in the message field
-  - `--trunc message=mytext`: Print everything up until the first occurrence of the phrase 'mytext' in the message field.
-  - `--trunc message="stop it"`: Print everything up until the first occurrence of the phrase 'stop it' in the message field.
-  - `--trunc message=" "`: Print everything up until the first empty space in the message field.
-- `--where <field>=<value> | -W`: Only show log messages where the value occurs. Several usage examples:
-  - `--where <field>=<value>`: Only show log messages where the specific field has the given value
-  - `--where <field>=<value>,<field>=<value>`: Specify multiple conditions separated by comma
-  - `--where <value>`: Only show log messages where the value occurs in any data field or the message field. Value can be a partial phrase or text.
+- `--multi-line | -M`: Print output on multiple lines with log message and level first and then each data field on separate lines.
+- `--no-data`: Don't show any logged data fields.
+- `--level <level> | -L`: Only show log messages matching this level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
+- `--fields <field>(,<field>) | -F`: Only show specific data field(s). Several field names can be separated by comma. Field name can have leading and/or trailing wildcard `*`.
+- `--except <field>(,<field>) | -E`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
+- `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring.
+- `--where <field>=<value> | -W`: Only show log messages where the value occurs.
 - `--highlight-key <field> | -K`: Highlight the key of the field in the output. Field name can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
 - `--highlight-value <field value> | -V`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
+
+### --trunc examples
+
+- `--trunc message=50`: Print the first 50 characters in the message field
+- `--trunc message="\n"`: Print everything up until the first line break in the message field
+- `--trunc message="\t"`: Print everything up until the first tab character in the message field
+- `--trunc message=mytext`: Print everything up until the first occurrence of the phrase 'mytext' in the message field.
+- `--trunc message="stop it"`: Print everything up until the first occurrence of the phrase 'stop it' in the message field.
+- `--trunc message=" "`: Print everything up until the first empty space in the message field.
+
+### --where examples
+
+- `--where <field>=<value>`: Only show log messages where the specific field has the given value
+- `--where <field>=<value>,<field>=<value>`: Specify multiple conditions separated by comma
+- `--where <value>`: Only show log messages where the value occurs in any data field or the message field. Value can be a partial phrase or text.
 
 ### Wildcard `*`
 
 Several flags support the wildcard `*` in their values to match several things at once:
 
-- `--field`
 - `--fields`
 - `--except`
 - `--highlight-key`
