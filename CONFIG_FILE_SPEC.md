@@ -4,9 +4,12 @@ If the environment variable `PRETTY_LOGRUS_HOME` is set, we'll look for a `confi
 
 The file itself is optional and all fields in it are optional.
 
+> Example config.json:  
+> There is an example config.json file in [examples/config.json](./examples/config.json) which changes most of the default styles. Not necessarily pretty, but it shows what is possible.
+
 ### Note about the `Style` object
 
-Several text styles can be overriden in the configuration file. Each override takes the same `Style` object.
+Several text styles can be overridden in the configuration file. Each override takes the same `Style` object.
 
 | Field path  | Description      | Type                          |
 |-------------|------------------|-------------------------------|

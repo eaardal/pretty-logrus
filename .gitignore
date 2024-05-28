@@ -1,4 +1,4 @@
 plr
 .idea/
 vendor/
-config.json
+examples/config.json
