@@ -106,6 +106,14 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.3.0
+
+:calendar: 2024-05-28
+
+- :boom: Removed the `--field` flag. Use `--fields` instead. There is no difference in usage, except `--fields` can do more than `--field` could and as such it was redundant having two really similar args. The `-F` shorthand alias has also been moved to `--fields`.
+- :hammer_and_wrench: Added default colors for all logrus log levels. The colors can be overridden in the configuration file.
+- :hammer_and_wrench: Added `-E` shorthand alias for the `--except` arg.
+
 ## v1.2.2
 
 :calendar: 2024-05-26
