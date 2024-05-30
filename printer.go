@@ -73,14 +73,13 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 		}
 	}
 
-	sort.Strings(fields)
-	fieldsString := strings.Join(fields, ", ")
-
 	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
 	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
 	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
 
 	if len(fields) > 0 {
+		sortedFields := sortFieldsAlphabetically(fields)
+		fieldsString := strings.Join(sortedFields, ", ")
 		fmt.Printf("[%s] %s - %s - %s\n", level, timestamp, message, fieldsString)
 	} else {
 		fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
@@ -114,9 +113,6 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 		}
 	}
 
-	sort.Strings(fields)
-	fieldsString := strings.Join(fields, "\n")
-
 	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
 	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
 	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
@@ -124,6 +120,8 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 	fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
 
 	if len(fields) > 0 {
+		sortedFields := sortFieldsAlphabetically(fields)
+		fieldsString := strings.Join(sortedFields, "\n")
 		fmt.Println(fieldsString)
 	}
 }
@@ -221,4 +219,9 @@ func shouldShowLogLineForWhereFilter(whereFields map[string]string, logEntry *Lo
 	}
 
 	return false
+}
+
+func sortFieldsAlphabetically(fields []string) []string {
+	sort.Strings(fields)
+	return fields
 }
