@@ -8,13 +8,19 @@ import (
 	"strings"
 )
 
+const AnyField = "*"
+
 type Args struct {
-	IncludedFields map[string]struct{}
-	ExcludedFields map[string]struct{}
-	Truncate       *Truncate
-	WhereFields    map[string]string
-	HighlightKey   string
-	HighlightValue string
+	IncludedFields          map[string]struct{}
+	ExcludedFields          map[string]struct{}
+	Truncate                *Truncate
+	WhereFields             map[string]string
+	HighlightKey            string
+	HighlightValue          string
+	AddToMsgIgnoreList      string
+	RemoveFromMsgIgnoreList string
+	ClearMsgIgnoreList      bool
+	ShowMsgIgnoreList       bool
 }
 
 func parseArgs() *Args {
@@ -26,6 +32,10 @@ func parseArgs() *Args {
 	args.WhereFields = parseWhereArg()
 	args.HighlightKey = parseHighlightKey()
 	args.HighlightValue = parseHighlightValue()
+	args.AddToMsgIgnoreList = parseAddToMsgIgnoreList()
+	args.RemoveFromMsgIgnoreList = parseRemoveFromMsgIgnoreList()
+	args.ClearMsgIgnoreList = parseClearMsgIgnoreList()
+	args.ShowMsgIgnoreList = parseShowMsgIgnoreList()
 
 	if isDebug() {
 		fmt.Printf("CLI Arguments:\n")
@@ -102,8 +112,6 @@ func parseTruncArg() *Truncate {
 	return nil
 }
 
-const AnyField = "*"
-
 func parseWhereArg() map[string]string {
 	if whereFlag != nil && *whereFlag != "" {
 		whereFields := make(map[string]string)
@@ -138,6 +146,34 @@ func parseWhereClause(whereClause string) (string, string) {
 		log.Fatalf("Invalid format for --where flag: %s, expected either a) --where [fieldname]=[value], b) --where trace.id=abc,something=else,more=stuff or c) --where [value]", *whereFlag)
 	}
 	return parts[0], parts[1]
+}
+
+func parseAddToMsgIgnoreList() string {
+	if addToMsgIgnoreList != nil {
+		return *addToMsgIgnoreList
+	}
+	return ""
+}
+
+func parseRemoveFromMsgIgnoreList() string {
+	if removeFromMsgIgnoreList != nil {
+		return *removeFromMsgIgnoreList
+	}
+	return ""
+}
+
+func parseClearMsgIgnoreList() bool {
+	if clearMsgIgnoreList != nil {
+		return *clearMsgIgnoreList
+	}
+	return false
+}
+
+func parseShowMsgIgnoreList() bool {
+	if showMsgIgnoreList != nil {
+		return *showMsgIgnoreList
+	}
+	return false
 }
 
 func isDebug() bool {

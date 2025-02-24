@@ -17,6 +17,10 @@ var whereFlag = flag.String("where", "", "Filter log entries based on a conditio
 var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
 var highlightKey = flag.String("highlight-key", "", "Highlight the specified key in the output")
 var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
+var addToMsgIgnoreList = flag.String("msg-ignore-add", "", "Add a message substring to the ignore list. Log entries containing a message with this substring will be ignored")
+var removeFromMsgIgnoreList = flag.String("msg-ignore-rm", "", "Remove a message substring from the ignore list")
+var clearMsgIgnoreList = flag.Bool("msg-ignore-clear", false, "Clear the message ignore list")
+var showMsgIgnoreList = flag.Bool("msg-ignore-ls", false, "Show the message ignore list")
 
 var flagAliases = map[string]string{
 	"multi-line":      "M",
