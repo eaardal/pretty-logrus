@@ -54,6 +54,8 @@ klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 - `--multi-line | -M`: Print output on multiple lines with log message and level first and then each data field on separate lines.
 - `--no-data`: Don't show any logged data fields.
 - `--level <level> | -L`: Only show log messages matching this level. Values (logrus levels): `trace` | `debug` | `info` | `warning` | `error` | `fatal` | `panic`
+- `--min-level <level>`: Only show log messages at this log level or higher. Severity levels: `trace=1, debug=2, info=3, warning=4, error=5, fatal=6, panic=7`
+- `--max-level <level>`: Only show log messages at this log level or lower. Severity levels: `trace=1, debug=2, info=3, warning=4, error=5, fatal=6, panic=7`
 - `--fields <field>(,<field>) | -F`: Only show specific data field(s). Several field names can be separated by comma. Field name can have leading and/or trailing wildcard `*`.
 - `--except <field>(,<field>) | -E`: Don't show this particular field or fields separated by comma. Field name can have leading and/or trailing wildcard `*`.
 - `--trunc <field>=<num chars or substr>`: Truncate the content of this field by an index or substring.
