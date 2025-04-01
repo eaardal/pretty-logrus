@@ -5,7 +5,7 @@ Takes JSON-formatted [logrus](https://github.com/sirupsen/logrus) log messages a
 ### Build it
 
 ```shell
-go build -o plr main.go
+go build -o plr ./...
 ```
 
 Put the `plr` executable somewhere on your PATH.
