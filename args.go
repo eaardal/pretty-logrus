@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+var logLevelToSeverity = map[string]int{
+	"":        -1,
+	"trace":   1,
+	"debug":   2,
+	"info":    3,
+	"warning": 4,
+	"error":   5,
+	"fatal":   6,
+	"panic":   7,
+}
+
 type Args struct {
 	IncludedFields map[string]struct{}
 	ExcludedFields map[string]struct{}
@@ -15,9 +26,12 @@ type Args struct {
 	WhereFields    map[string]string
 	HighlightKey   string
 	HighlightValue string
+	LogLevel       string
+	MinLogLevel    string
+	MaxLogLevel    string
 }
 
-func parseArgs() *Args {
+func parseArgs() (*Args, error) {
 	args := &Args{}
 
 	args.IncludedFields = parseFieldsArg()
@@ -26,6 +40,24 @@ func parseArgs() *Args {
 	args.WhereFields = parseWhereArg()
 	args.HighlightKey = parseHighlightKey()
 	args.HighlightValue = parseHighlightValue()
+
+	level, err := parseLogLevel()
+	if err != nil {
+		return nil, err
+	}
+	args.LogLevel = level
+
+	minLevel, err := parseMinLogLevel()
+	if err != nil {
+		return nil, err
+	}
+	args.MinLogLevel = minLevel
+
+	maxLevel, err := parseMaxLogLevel()
+	if err != nil {
+		return nil, err
+	}
+	args.MaxLogLevel = maxLevel
 
 	if isDebug() {
 		fmt.Printf("CLI Arguments:\n")
@@ -37,9 +69,45 @@ func parseArgs() *Args {
 		fmt.Printf("    Where: %+v\n", args.WhereFields)
 		fmt.Printf("    Highlight key: %s\n", args.HighlightKey)
 		fmt.Printf("    Highlight value: %s\n", args.HighlightValue)
+		fmt.Printf("    LogLevel: %s\n", args.LogLevel)
+		fmt.Printf("    MinLogLevel: %s\n", args.MinLogLevel)
+		fmt.Printf("    MaxLogLevel: %s\n", args.MaxLogLevel)
 	}
 
-	return args
+	return args, nil
+}
+
+func parseLogLevel() (string, error) {
+	if levelFilter != nil && *levelFilter != "" {
+		severity := logLevelToSeverity[*levelFilter]
+		if severity <= 0 {
+			return "", fmt.Errorf("invalid log level %q, must be one of trace|debug|info|warning|error|fatal|panic", *levelFilter)
+		}
+		return *levelFilter, nil
+	}
+	return "", nil
+}
+
+func parseMinLogLevel() (string, error) {
+	if minLevelFilter != nil && *minLevelFilter != "" {
+		severity := logLevelToSeverity[*minLevelFilter]
+		if severity <= 0 {
+			return "", fmt.Errorf("invalid minimum log level %q, must be one of trace|debug|info|warning|error|fatal|panic", *minLevelFilter)
+		}
+		return *minLevelFilter, nil
+	}
+	return "", nil
+}
+
+func parseMaxLogLevel() (string, error) {
+	if maxLevelFilter != nil && *maxLevelFilter != "" {
+		severity := logLevelToSeverity[*maxLevelFilter]
+		if severity <= 0 {
+			return "", fmt.Errorf("invalid maximum log level %q, must be one of trace|debug|info|warning|error|fatal|panic", *maxLevelFilter)
+		}
+		return *maxLevelFilter, nil
+	}
+	return "", nil
 }
 
 func parseHighlightKey() string {

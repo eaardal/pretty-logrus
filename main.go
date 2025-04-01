@@ -17,6 +17,8 @@ var whereFlag = flag.String("where", "", "Filter log entries based on a conditio
 var debugFlag = flag.Bool("debug", false, "Print verbose debug information")
 var highlightKey = flag.String("highlight-key", "", "Highlight the specified key in the output")
 var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
+var minLevelFilter = flag.String("min-level", "", "Only show log messages with this level or higher")
+var maxLevelFilter = flag.String("max-level", "", "Only show log messages with this level or lower")
 
 var flagAliases = map[string]string{
 	"multi-line":      "M",
@@ -40,7 +42,12 @@ func main() {
 	applyFlagAliases()
 	flag.Parse()
 
-	args := parseArgs()
+	args, err := parseArgs()
+	if err != nil {
+		fmt.Printf("Error parsing arguments: %v\n", err)
+		return
+	}
+
 	config := getConfig()
 
 	ctx := context.Background()

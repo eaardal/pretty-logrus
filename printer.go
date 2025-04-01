@@ -179,15 +179,32 @@ func fmtMessage(truncate *Truncate, message string) string {
 }
 
 func shouldShowLogLine(args Args, logEntry *LogEntry) bool {
-	return shouldShowLogLineForLevelFilter(logEntry) && shouldShowLogLineForWhereFilter(args.WhereFields, logEntry)
+	return shouldShowLogLineForLevelFilter(logEntry, args) && shouldShowLogLineForWhereFilter(args.WhereFields, logEntry)
 }
 
-func shouldShowLogLineForLevelFilter(logEntry *LogEntry) bool {
-	if levelFilter == nil || *levelFilter == "" {
+func shouldShowLogLineForLevelFilter(logEntry *LogEntry, args Args) bool {
+	if args.MinLogLevel == "" && args.MaxLogLevel == "" && args.LogLevel == "" {
 		return true
 	}
 
-	return logEntry.Level == *levelFilter
+	logEntrySeverity := logLevelToSeverity[logEntry.Level]
+	logLevelSeverity := logLevelToSeverity[args.LogLevel]
+	minLogLevelSeverity := logLevelToSeverity[args.MinLogLevel]
+	maxLogLevelSeverity := logLevelToSeverity[args.MaxLogLevel]
+
+	if logLevelSeverity > 0 {
+		return logEntrySeverity == logLevelSeverity
+	}
+
+	if minLogLevelSeverity > 0 {
+		return logEntrySeverity >= minLogLevelSeverity
+	}
+
+	if maxLogLevelSeverity > 0 {
+		return logEntrySeverity <= maxLogLevelSeverity
+	}
+
+	return false
 }
 
 func shouldShowLogLineForWhereFilter(whereFields map[string]string, logEntry *LogEntry) bool {
