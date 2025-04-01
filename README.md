@@ -112,6 +112,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.4.0
+
+:calendar: 2025-04-01
+
+- :sparkles: Added `--min-level` and `--max-level` arguments to specify when you want to show log messages with _at least_ or _at most_ a certain log level severity: `trace=1, debug=2, info=3, warning=4, error=5, fatal=6, panic=7` 
+
 ## v1.3.0
 
 :calendar: 2024-05-28
