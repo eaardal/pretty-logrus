@@ -3,17 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/fatih/color"
 	"sort"
 	"strings"
 )
-
-var cyan = color.CyanString
-var blue = color.BlueString
-var yellow = color.YellowString
-var green = color.GreenString
-var white = color.WhiteString
-var red = color.RedString
 
 func printLogEntries(ctx context.Context, args Args, config Config, logEntries <-chan *LogEntry) {
 	for {

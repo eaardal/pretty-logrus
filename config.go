@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Elastic Common Schema (ECS) field names
@@ -61,6 +62,11 @@ func newDefaultConfig() *Config {
 			FieldKeywords:     []string{"labels"},
 		},
 	}
+}
+
+func hasHomeEnvVar() bool {
+	_, ok := os.LookupEnv(HomeEnvVar)
+	return ok
 }
 
 func hasConfigFile() bool {
