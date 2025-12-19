@@ -127,7 +127,7 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 - :sparkles: Added support for excluding fields from log entries via config file, if there are fields that are more noise and you don't want to see them in the output for most of the time. This basically does the same thing as the `--except` flag.
 - :sparkles: Added `--all-fields` flag to show all fields, including excluded ones from config file or the ones from the `--except` arg.
 - :sparkles: Addad `default-config` command to print the default configuration file to stdout: `plr default-config`.
-- :sparkles: Added `init` command to create a config file at the location `PRETTY_LOGRUS_HOME` is pointing to. It is required to set this environment variable to run this command.
+- :sparkles: Added `init` command to create a config file at the location `PRETTY_LOGRUS_HOME` is pointing to. It is required to set this environment variable to run this command: `PRETTY_LOGRUS_HOME=~/.config/plr plr init`
 - 
 ## v1.4.0
 
