@@ -59,7 +59,7 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 					addField(fieldName, fieldValue)
 				}
 			} else if len(args.ExcludedFields) > 0 || len(config.ExcludeFields) > 0 {
-				if isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName) {
+				if (isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName)) && !args.AllFields {
 					hasExcludedFields = true
 				} else {
 					addField(fieldName, fieldValue)
@@ -103,14 +103,13 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 	hasExcludedFields := false
 
 	if noData == nil || *noData == false {
-		logDebug("exclude fields: %+v\n", config.ExcludeFields)
 		for fieldName, fieldValue := range logEntry.Fields {
 			if len(args.IncludedFields) > 0 {
 				if isFieldInMap(args.IncludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
 			} else if len(args.ExcludedFields) > 0 || len(config.ExcludeFields) > 0 {
-				if isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName) {
+				if (isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName)) && !args.AllFields {
 					hasExcludedFields = true
 				} else {
 					addField(fieldName, fieldValue)

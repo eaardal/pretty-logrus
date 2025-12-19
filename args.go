@@ -29,6 +29,7 @@ type Args struct {
 	LogLevel       string
 	MinLogLevel    string
 	MaxLogLevel    string
+	AllFields      bool
 }
 
 func parseArgs() (*Args, error) {
@@ -40,6 +41,7 @@ func parseArgs() (*Args, error) {
 	args.WhereFields = parseWhereArg()
 	args.HighlightKey = parseHighlightKey()
 	args.HighlightValue = parseHighlightValue()
+	args.AllFields = parseAllFieldsArg()
 
 	level, err := parseLogLevel()
 	if err != nil {
@@ -72,9 +74,14 @@ func parseArgs() (*Args, error) {
 		fmt.Printf("    LogLevel: %s\n", args.LogLevel)
 		fmt.Printf("    MinLogLevel: %s\n", args.MinLogLevel)
 		fmt.Printf("    MaxLogLevel: %s\n", args.MaxLogLevel)
+		fmt.Printf("    AllFields: %t\n", args.AllFields)
 	}
 
 	return args, nil
+}
+
+func parseAllFieldsArg() bool {
+	return allFields != nil && *allFields
 }
 
 func parseLogLevel() (string, error) {

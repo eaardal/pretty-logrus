@@ -19,6 +19,7 @@ var highlightKey = flag.String("highlight-key", "", "Highlight the specified key
 var highlightValue = flag.String("highlight-value", "", "Highlight the specified value in the output")
 var minLevelFilter = flag.String("min-level", "", "Only show log messages with this level or higher")
 var maxLevelFilter = flag.String("max-level", "", "Only show log messages with this level or lower")
+var allFields = flag.Bool("all-fields", false, "Show all fields, including excluded ones from config file")
 
 var flagAliases = map[string]string{
 	"multi-line":      "M",
