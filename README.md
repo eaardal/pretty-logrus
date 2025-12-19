@@ -122,8 +122,8 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 
 :calendar: 2025-12-19
 
-- :sparkles: Added support for config file via environment variable `PRETTY_LOGRUS_HOME`. See [README](./README.md#configuration-file) for more information.
-- :sparkles: Added support for overriding colors and styling via config file. See [README](./README.md#configuration-file) for more information. This can be useful to highlight certain fields like you want or adapt the color scheme to your terminal.
+- :sparkles: Added support for config file via environment variable `PRETTY_LOGRUS_HOME`. See [CONFIG_FILE_SPEC](./CONFIG_FILE_SPEC.md) for more information.
+- :sparkles: Added support for overriding colors and styling via config file. See [CONFIG_FILE_SPEC](./CONFIG_FILE_SPEC.md) for more information. This can be useful to highlight certain fields like you want or adapt the color scheme to your terminal.
 - :sparkles: Added support for excluding fields from log entries via config file, if there are fields that are more noise and you don't want to see them in the output for most of the time. This basically does the same thing as the `--except` flag.
 - :sparkles: Added `--all-fields` flag to show all fields, including excluded ones from config file or the ones from the `--except` arg.
 - :sparkles: Addad `default-config` command to print the default configuration file to stdout: `plr default-config`.
