@@ -1,11 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-	"path"
-
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,8 +11,6 @@ const (
 	ecsLevelField     = "log.level"
 	ecsTimestampField = "@timestamp"
 )
-
-const HomeEnvVar = "PRETTY_LOGRUS_HOME"
 
 type Style struct {
 	BgColor   *string
@@ -41,11 +34,14 @@ type KeywordConfig struct {
 }
 
 type Config struct {
-	LevelStyles     map[string]Style
-	FieldStyles     map[string]KeyValueStyle
-	MessageStyles   map[string]Style
-	TimestampStyles map[string]Style
-	Keywords        *KeywordConfig
+	LevelStyles                     map[string]Style
+	FieldStyles                     map[string]KeyValueStyle
+	MessageStyles                   map[string]Style
+	TimestampStyles                 map[string]Style
+	Keywords                        *KeywordConfig
+	ExcludeFields                   []string
+	ExcludedFieldsWarningText       string
+	ExcludedFieldsWarningTextStyles map[string]Style
 }
 
 func newDefaultConfig() *Config {
@@ -61,63 +57,36 @@ func newDefaultConfig() *Config {
 			ErrorKeywords:     []string{logrus.ErrorKey},
 			FieldKeywords:     []string{"labels"},
 		},
+		ExcludeFields:                   []string{},
+		ExcludedFieldsWarningText:       "[Some fields excluded]",
+		ExcludedFieldsWarningTextStyles: DefaultExcludedWarningTextStyles,
 	}
-}
-
-func hasHomeEnvVar() bool {
-	_, ok := os.LookupEnv(HomeEnvVar)
-	return ok
-}
-
-func hasConfigFile() bool {
-	env, ok := os.LookupEnv(HomeEnvVar)
-	if !ok {
-		return false
-	}
-
-	_, err := os.Stat(path.Join(env, "config.json"))
-	return !os.IsNotExist(err)
-}
-
-func readConfigFile(defaultConfig Config) (*Config, error) {
-	homeDir := os.Getenv(HomeEnvVar)
-	configFilePath := path.Join(homeDir, "config.json")
-
-	content, err := os.ReadFile(configFilePath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read config file: %v", err)
-	}
-
-	config := defaultConfig
-	if err = json.Unmarshal(content, &config); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal config file: %v", err)
-	}
-
-	if isDebug() {
-		configJson, _ := json.MarshalIndent(config, "", "  ")
-		fmt.Printf("Read config file: %s\n", configJson)
-	}
-
-	return &config, nil
 }
 
 func getConfig() *Config {
 	defaultConfig := newDefaultConfig()
+
+	if err := ensureConfigFileExistsIfHomeEnvIsSet(defaultConfig); err != nil {
+		logDebug("Error ensuring config file exists: ", err)
+		return defaultConfig
+	}
 
 	if !hasConfigFile() {
 		logDebug("No config file found\n")
 		return defaultConfig
 	}
 
-	config, err := readConfigFile(*defaultConfig)
+	configFile, err := readConfigFile(*defaultConfig)
 	if err != nil {
 		logDebug("Failed to read config file: %v\n", err)
 		return defaultConfig
 	}
 
-	if config == nil {
+	if configFile == nil {
 		return defaultConfig
 	}
 
-	return config
+	logDebug("Loaded config file: %+v\n", configFile)
+
+	return configFile
 }

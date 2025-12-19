@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -49,14 +50,18 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 		fields = append(fields, field)
 	}
 
+	hasExcludedFields := false
+
 	if noData == nil || *noData == false {
 		for fieldName, fieldValue := range logEntry.Fields {
 			if len(args.IncludedFields) > 0 {
-				if isFieldInList(args.IncludedFields, fieldName) {
+				if isFieldInMap(args.IncludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
-			} else if len(args.ExcludedFields) > 0 {
-				if !isFieldInList(args.ExcludedFields, fieldName) {
+			} else if len(args.ExcludedFields) > 0 || len(config.ExcludeFields) > 0 {
+				if isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName) {
+					hasExcludedFields = true
+				} else {
 					addField(fieldName, fieldValue)
 				}
 			} else {
@@ -71,7 +76,13 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 
 	if len(fields) > 0 {
 		sortedFields := sortFieldsAlphabetically(fields)
-		fieldsString := strings.Join(sortedFields, ", ")
+		fieldsString := strings.Join(sortedFields, " ")
+
+		if hasExcludedFields {
+			excludedFieldsWarning := applyExcludedFieldsWarningTextStyle(config.ExcludedFieldsWarningText, config.ExcludedFieldsWarningTextStyles)
+			fieldsString = excludedFieldsWarning + " " + fieldsString
+		}
+
 		fmt.Printf("[%s] %s - %s - %s\n", level, timestamp, message, fieldsString)
 	} else {
 		fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
@@ -89,14 +100,19 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 		fields = append(fields, field)
 	}
 
+	hasExcludedFields := false
+
 	if noData == nil || *noData == false {
+		logDebug("exclude fields: %+v\n", config.ExcludeFields)
 		for fieldName, fieldValue := range logEntry.Fields {
 			if len(args.IncludedFields) > 0 {
-				if isFieldInList(args.IncludedFields, fieldName) {
+				if isFieldInMap(args.IncludedFields, fieldName) {
 					addField(fieldName, fieldValue)
 				}
-			} else if len(args.ExcludedFields) > 0 {
-				if !isFieldInList(args.ExcludedFields, fieldName) {
+			} else if len(args.ExcludedFields) > 0 || len(config.ExcludeFields) > 0 {
+				if isFieldInMap(args.ExcludedFields, fieldName) || isFieldInSlice(config.ExcludeFields, fieldName) {
+					hasExcludedFields = true
+				} else {
 					addField(fieldName, fieldValue)
 				}
 			} else {
@@ -114,11 +130,56 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 	if len(fields) > 0 {
 		sortedFields := sortFieldsAlphabetically(fields)
 		fieldsString := strings.Join(sortedFields, "\n")
+
+		if hasExcludedFields {
+			excludedFieldsWarning := "  " + applyExcludedFieldsWarningTextStyle(config.ExcludedFieldsWarningText, config.ExcludedFieldsWarningTextStyles)
+			fieldsString = excludedFieldsWarning + "\n" + fieldsString
+		}
+
 		fmt.Println(fieldsString)
 	}
 }
 
-func isFieldInList(list map[string]struct{}, fieldName string) bool {
+func isFieldInSlice(list []string, fieldName string) bool {
+	logDebug("is field %s in slice %s", fieldName, list)
+
+	for _, item := range list {
+		if item == fieldName {
+			return true
+		}
+
+		if strings.HasSuffix(item, "*") {
+			cleanKey := strings.TrimSuffix(item, "*")
+
+			if strings.HasPrefix(fieldName, cleanKey) {
+				logDebug("Field '%s' is in list because of trailing wildcard '%s'\n", fieldName, item)
+				return true
+			}
+		}
+
+		if strings.HasPrefix(item, "*") {
+			cleanKey := strings.TrimPrefix(item, "*")
+
+			if strings.HasSuffix(fieldName, cleanKey) {
+				logDebug("Field '%s' is in list because of leading wildcard '%s'\n", fieldName, item)
+				return true
+			}
+		}
+
+		if strings.HasPrefix(item, "*") && strings.HasSuffix(item, "*") {
+			cleanKey := strings.Trim(item, "*")
+
+			if strings.Contains(fieldName, cleanKey) {
+				logDebug("Field '%s' is in list because of leading and trailing wildcard '%s'\n", fieldName, item)
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func isFieldInMap(list map[string]struct{}, fieldName string) bool {
 	if _, found := list[fieldName]; found {
 		logDebug("Field '%s' is explicitly in list\n", fieldName)
 		return true
@@ -154,7 +215,7 @@ func isFieldInList(list map[string]struct{}, fieldName string) bool {
 	}
 
 	if isDebug() {
-		fmt.Printf("Field '%s' is not in list found\n", fieldName)
+		fmt.Printf("Field '%s' is not in map of excluded fields\n", fieldName)
 	}
 	return false
 }
@@ -171,7 +232,22 @@ func fmtMessage(truncate *Truncate, message string) string {
 }
 
 func shouldShowLogLine(args Args, logEntry *LogEntry) bool {
-	return shouldShowLogLineForLevelFilter(logEntry, args) && shouldShowLogLineForWhereFilter(args.WhereFields, logEntry)
+	return shouldShowLogLineForLevelFilter(logEntry, args) &&
+		shouldShowLogLineForWhereFilter(args.WhereFields, logEntry)
+}
+
+func isExcluded(entry *LogEntry, excludedFieldsFromArgs map[string]struct{}, excludedFieldsFromConfigFile []string) bool {
+	for fieldName := range entry.Fields {
+		if slices.Contains(excludedFieldsFromConfigFile, fieldName) {
+			return true
+		}
+
+		if _, exists := excludedFieldsFromArgs[fieldName]; exists {
+			return true
+		}
+	}
+
+	return false
 }
 
 func shouldShowLogLineForLevelFilter(logEntry *LogEntry, args Args) bool {

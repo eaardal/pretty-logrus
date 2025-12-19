@@ -5,4 +5,4 @@ build:
 	go build -o plr ./...
 
 run-example: build
-	cat ./playground/log.json | PRETTY_LOGRUS_HOME=~/.config/eaardal/plr-debug ./plr
+	cat ./playground/log.json | PRETTY_LOGRUS_HOME=~/.config/eaardal/plr-debug ./plr --multi-line

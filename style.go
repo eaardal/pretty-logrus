@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/fatih/color"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 const DefaultStylesKey = "default"
@@ -72,6 +73,12 @@ var DefaultMessageStyles = map[string]Style{
 var DefaultTimestampStyles = map[string]Style{
 	DefaultStylesKey: {
 		FgColor: getColorCode(color.FgBlue),
+	},
+}
+
+var DefaultExcludedWarningTextStyles = map[string]Style{
+	DefaultStylesKey: {
+		FgColor: getColorCode(color.FgCyan),
 	},
 }
 
@@ -169,6 +176,26 @@ func applyTimestampStyle(timestamp string, styles map[string]Style) string {
 
 	logDebug("Applying styles %+v for timestamp\n", style)
 	return applyStyles(style).Sprint(timestamp)
+}
+
+func applyExcludedFieldsWarningTextStyle(text string, styles map[string]Style) string {
+	defaultText := color.New().Sprint(text)
+
+	if styles == nil {
+		styles = DefaultExcludedWarningTextStyles
+	}
+
+	defaultStyle, ok := styles[DefaultStylesKey]
+	if ok {
+		defaultText = applyStyles(&defaultStyle).Sprint(text)
+	}
+
+	style := findStyleOverride(styles, defaultText)
+	if style == nil {
+		return defaultText
+	}
+
+	return applyStyles(style).Sprint(text)
 }
 
 func applyMessageStyle(message string, styles map[string]Style) string {
