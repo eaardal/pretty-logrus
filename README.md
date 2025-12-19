@@ -118,6 +118,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.5.2
+
+:calendar: 2025-12-19
+
+- :bug: Fix a bug where args where treated like commands.
+
 ## v1.5.1
 
 :calendar: 2025-12-19
