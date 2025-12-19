@@ -5,7 +5,8 @@ If the environment variable `PRETTY_LOGRUS_HOME` is set, we'll look for a `confi
 The file itself is optional and all fields in it are optional.
 
 > Example config.json:  
-> There is an example config.json file in [examples/config.json](./examples/config.json) which changes most of the default styles. Not necessarily pretty, but it shows what is possible.
+> There is an example config.json file in [examples/config.json](./examples/config.json) which changes most of the
+> default styles. Not necessarily pretty, but it shows what is possible.
 
 ### Note about the `Style` object
 
@@ -19,7 +20,8 @@ Several text styles can be overridden in the configuration file. Each override t
 | `underline` | Underlined text  | `bool`                        |
 | `italic`    | Italic text      | `bool`                        |
 
-The app uses `github.com/fatih/color` for colorizing the output, so [all their colors](https://github.com/fatih/color) are available.
+The app uses `github.com/fatih/color` for colorizing the output, so [all their colors](https://github.com/fatih/color)
+are available.
 
 ![](https://user-images.githubusercontent.com/438920/96832689-03b3e000-13f4-11eb-9803-46f4c4de3406.jpg)
 
@@ -70,7 +72,8 @@ The available `Colors` are:
 
 Contains lists of keywords the app will look for to identify specific fields in the raw log message text.
 
-If you override any of the keyword lists, the defaults will be ignored so you might need to add those in addition to the new ones.
+If you override any of the keyword lists, the defaults will be ignored so you might need to add those in addition to the
+new ones.
 
 | Field path                   | Description                                      | Default                  |
 |------------------------------|--------------------------------------------------|--------------------------|
@@ -83,14 +86,28 @@ If you override any of the keyword lists, the defaults will be ignored so you mi
 #### Example
 
 config.json
+
 ```json
 {
   "keywords": {
-    "messageKeywords": ["msg", "message"],
-    "levelKeywords": ["level", "log.level"],
-    "timestampKeywords": ["time", "@timestamp"],
-    "errorKeywords": ["error"],
-    "fieldKeywords": ["labels"]
+    "messageKeywords": [
+      "msg",
+      "message"
+    ],
+    "levelKeywords": [
+      "level",
+      "log.level"
+    ],
+    "timestampKeywords": [
+      "time",
+      "@timestamp"
+    ],
+    "errorKeywords": [
+      "error"
+    ],
+    "fieldKeywords": [
+      "labels"
+    ]
   }
 }
 ```
@@ -107,6 +124,7 @@ Styles for the log level field.
 #### Example
 
 config.json
+
 ```json
 {
   "levelStyles": {
@@ -133,13 +151,14 @@ config.json
 
 ### The `timestampStyles` object
 
-| Field path                         | Description                                                 | Default                   |
-|------------------------------------|-------------------------------------------------------------|---------------------------|
-| `timestampStyles.default`          | `Style` object. The default styles for the timestamp field. | `{ "fgColor": "fgBlue" }` |
+| Field path                | Description                                                 | Default                   |
+|---------------------------|-------------------------------------------------------------|---------------------------|
+| `timestampStyles.default` | `Style` object. The default styles for the timestamp field. | `{ "fgColor": "fgBlue" }` |
 
 #### Example
 
 config.json
+
 ```json
 {
   "timestampStyles": {
@@ -160,6 +179,7 @@ config.json
 #### Example
 
 config.json
+
 ```json
 {
   "messageStyles": {
@@ -169,7 +189,6 @@ config.json
   }
 }
 ```
-
 
 ### The `fieldStyles` object
 
@@ -182,11 +201,13 @@ config.json
 | `fieldStyles.<YOUR FIELD NAME>.key`   | `Style` object. The styles to be applied for key/name for fields matching the name specified.     | n/a                                                                       |
 | `fieldStyles.<YOUR FIELD NAME>.value` | `Style` object. The styles to be applied for values for fields matching the name specified.       | n/a                                                                       |
 
-When targeting fields, you can use the wildcard `*` to match several fields at once. See [Wildcard](./README.md#wildcard-) and the examples below for more information.
+When targeting fields, you can use the wildcard `*` to match several fields at once.
+See [Wildcard](./README.md#wildcard-) and the examples below for more information.
 
 #### Example
 
 config.json
+
 ```json
 {
   "fieldStyles": {
@@ -247,3 +268,21 @@ config.json
   }
 }
 ```
+
+### Exclude fields
+
+If there are data fields on log entries you almost never are interested in, you can exclude them from being printed.
+This can also be achieved using the `--except <FIELD,FIELD>` flag if you want to do it on-demand.
+
+If any fields are excluded, a warning text will be inserted to remind you that we're not showing everything. This text
+can be customized using the `ExcludeFieldsWarningText` field.
+
+`ExcludeFields` also support wildcard matching such as `meta*` for excluding all fields starting with `meta`.
+
+| Field path                       | Description                                                   | Default                    |
+|----------------------------------|---------------------------------------------------------------|----------------------------|
+| `ExcludeFields`                  | `[]string` slice of field names to be excluded.               | `null`                     |
+| `ExcludeFieldsWarningText`       | Text to be printed when excluding fields.                     | `"[Some fields excluded]"` |
+| `ExcludeFieldsWarningTextStyles` | `Style` object. The styles to be applied to the warning text. | `{ "fgColor": "fgCyan" }`  |
+
+If you have excluded fields in the config file, but want to show them anyway, you can use the `--all-fields` flag to override and show all fields regardless of other arguments or config.

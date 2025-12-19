@@ -2,8 +2,11 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
+	"path"
 	"sync"
 )
 
@@ -43,6 +46,13 @@ func main() {
 	applyFlagAliases()
 	flag.Parse()
 
+	if handeled, err := execCommands(); err != nil {
+		fmt.Printf("Error executing commands: %v\n", err)
+		return
+	} else if handeled {
+		return
+	}
+
 	args, err := parseArgs()
 	if err != nil {
 		fmt.Printf("Error parsing arguments: %v\n", err)
@@ -65,4 +75,36 @@ func main() {
 	readStdin(ctx, *config, logEntryCh)
 
 	wg.Wait()
+}
+
+func execCommands() (bool, error) {
+	if len(os.Args) < 2 {
+		return false, nil
+	}
+
+	command := os.Args[1]
+	logDebug("Executing command: %s", command)
+
+	switch command {
+	case "default-config":
+		config := newDefaultConfig()
+		configJson, _ := json.MarshalIndent(config, "", "  ")
+		fmt.Println(string(configJson))
+	case "init":
+		if !hasHomeEnvVar() {
+			fmt.Println("Please set PRETTY_LOGRUS_HOME environment variable to initialize config file")
+			return true, nil
+		}
+
+		if err := ensureConfigFileExistsIfHomeEnvIsSet(newDefaultConfig()); err != nil {
+			return true, err
+		}
+
+		fmt.Printf("Config file exists at: %s\n", path.Join(homeEnvDir(), configFileName))
+		fmt.Printf("Remember that PRETTY_LOGRUS_HOME environment variable must be set to use this config file. Make sure it's part of your shell config\n")
+	default:
+		return true, fmt.Errorf("unknown command: %s", command)
+	}
+
+	return true, nil
 }

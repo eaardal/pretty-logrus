@@ -15,6 +15,10 @@ func hasHomeEnvVar() bool {
 	return ok
 }
 
+func homeEnvDir() string {
+	return os.Getenv(HomeEnvVar)
+}
+
 func hasConfigFile() bool {
 	env, ok := os.LookupEnv(HomeEnvVar)
 	if !ok {
