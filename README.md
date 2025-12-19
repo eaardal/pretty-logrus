@@ -118,6 +118,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.5.1
+
+:calendar: 2025-12-19
+
+- :hammer_and_wrench: Move LogLevelToSeverity map to config file. See [CONFIG_FILE_SPEC](./CONFIG_FILE_SPEC.md#log-level-to-severity-mapping) for more information. This can be used to control how the `--level`, `--min-level` and `--max-level` flags work.
+
 ## v1.5.0
 
 :calendar: 2025-12-19

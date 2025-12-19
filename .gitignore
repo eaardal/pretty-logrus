@@ -2,3 +2,4 @@ plr
 .idea/
 vendor/
 examples/config.json
+.DS_Store

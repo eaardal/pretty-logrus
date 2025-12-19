@@ -53,13 +53,13 @@ func main() {
 		return
 	}
 
-	args, err := parseArgs()
+	config := getConfig()
+
+	args, err := parseArgs(config.LogLevelToSeverity)
 	if err != nil {
 		fmt.Printf("Error parsing arguments: %v\n", err)
 		return
 	}
-
-	config := getConfig()
 
 	ctx := context.Background()
 	logEntryCh := make(chan *LogEntry, 1)

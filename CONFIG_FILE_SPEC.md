@@ -286,3 +286,23 @@ can be customized using the `ExcludeFieldsWarningText` field.
 | `ExcludeFieldsWarningTextStyles` | `Style` object. The styles to be applied to the warning text. | `{ "fgColor": "fgCyan" }`  |
 
 If you have excluded fields in the config file, but want to show them anyway, you can use the `--all-fields` flag to override and show all fields regardless of other arguments or config.
+
+### Log level to severity mapping
+
+If you want to map a log level to a severity, you can do so using the `LogLevelToSeverity` field.
+
+Default:
+```
+"LogLevelToSeverity": {
+    "": -1,
+    "trace": 1,
+    "debug": 2,
+    "info": 3,
+    "warning": 4
+    "error": 5,
+    "fatal": 6,
+    "panic": 7,
+}
+```
+
+This affects how the args `--level`, `--min-level` and `--max-level` are interpreted. See their docs in [README](./README.md) for more info.

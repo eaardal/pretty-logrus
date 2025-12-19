@@ -42,6 +42,7 @@ type Config struct {
 	ExcludeFields                   []string
 	ExcludedFieldsWarningText       string
 	ExcludedFieldsWarningTextStyles map[string]Style
+	LogLevelToSeverity              map[string]int
 }
 
 func newDefaultConfig() *Config {
@@ -60,6 +61,16 @@ func newDefaultConfig() *Config {
 		ExcludeFields:                   []string{},
 		ExcludedFieldsWarningText:       "[Some fields excluded]",
 		ExcludedFieldsWarningTextStyles: DefaultExcludedWarningTextStyles,
+		LogLevelToSeverity: map[string]int{
+			"":        -1,
+			"trace":   1,
+			"debug":   2,
+			"info":    3,
+			"warning": 4,
+			"error":   5,
+			"fatal":   6,
+			"panic":   7,
+		},
 	}
 }
 

@@ -8,17 +8,6 @@ import (
 	"strings"
 )
 
-var logLevelToSeverity = map[string]int{
-	"":        -1,
-	"trace":   1,
-	"debug":   2,
-	"info":    3,
-	"warning": 4,
-	"error":   5,
-	"fatal":   6,
-	"panic":   7,
-}
-
 type Args struct {
 	IncludedFields map[string]struct{}
 	ExcludedFields map[string]struct{}
@@ -32,7 +21,7 @@ type Args struct {
 	AllFields      bool
 }
 
-func parseArgs() (*Args, error) {
+func parseArgs(logLevelToSeverity map[string]int) (*Args, error) {
 	args := &Args{}
 
 	args.IncludedFields = parseFieldsArg()
@@ -43,19 +32,19 @@ func parseArgs() (*Args, error) {
 	args.HighlightValue = parseHighlightValue()
 	args.AllFields = parseAllFieldsArg()
 
-	level, err := parseLogLevel()
+	level, err := parseLogLevel(logLevelToSeverity)
 	if err != nil {
 		return nil, err
 	}
 	args.LogLevel = level
 
-	minLevel, err := parseMinLogLevel()
+	minLevel, err := parseMinLogLevel(logLevelToSeverity)
 	if err != nil {
 		return nil, err
 	}
 	args.MinLogLevel = minLevel
 
-	maxLevel, err := parseMaxLogLevel()
+	maxLevel, err := parseMaxLogLevel(logLevelToSeverity)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +73,7 @@ func parseAllFieldsArg() bool {
 	return allFields != nil && *allFields
 }
 
-func parseLogLevel() (string, error) {
+func parseLogLevel(logLevelToSeverity map[string]int) (string, error) {
 	if levelFilter != nil && *levelFilter != "" {
 		severity := logLevelToSeverity[*levelFilter]
 		if severity <= 0 {
@@ -95,7 +84,7 @@ func parseLogLevel() (string, error) {
 	return "", nil
 }
 
-func parseMinLogLevel() (string, error) {
+func parseMinLogLevel(logLevelToSeverity map[string]int) (string, error) {
 	if minLevelFilter != nil && *minLevelFilter != "" {
 		severity := logLevelToSeverity[*minLevelFilter]
 		if severity <= 0 {
@@ -106,7 +95,7 @@ func parseMinLogLevel() (string, error) {
 	return "", nil
 }
 
-func parseMaxLogLevel() (string, error) {
+func parseMaxLogLevel(logLevelToSeverity map[string]int) (string, error) {
 	if maxLevelFilter != nil && *maxLevelFilter != "" {
 		severity := logLevelToSeverity[*maxLevelFilter]
 		if severity <= 0 {

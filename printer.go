@@ -18,7 +18,7 @@ func printLogEntries(ctx context.Context, args Args, config Config, logEntries <
 				return
 			}
 
-			if !shouldShowLogLine(args, logEntry) {
+			if !shouldShowLogLine(args, config, logEntry) {
 				if isDebug() {
 					fmt.Printf("Not showing log entry %d\n", logEntry.LineNumber)
 				}
@@ -230,8 +230,8 @@ func fmtMessage(truncate *Truncate, message string) string {
 	return fmtValue(truncate, "message", message)
 }
 
-func shouldShowLogLine(args Args, logEntry *LogEntry) bool {
-	return shouldShowLogLineForLevelFilter(logEntry, args) &&
+func shouldShowLogLine(args Args, config Config, logEntry *LogEntry) bool {
+	return shouldShowLogLineForLevelFilter(logEntry, args, config) &&
 		shouldShowLogLineForWhereFilter(args.WhereFields, logEntry)
 }
 
@@ -249,15 +249,15 @@ func isExcluded(entry *LogEntry, excludedFieldsFromArgs map[string]struct{}, exc
 	return false
 }
 
-func shouldShowLogLineForLevelFilter(logEntry *LogEntry, args Args) bool {
+func shouldShowLogLineForLevelFilter(logEntry *LogEntry, args Args, config Config) bool {
 	if args.MinLogLevel == "" && args.MaxLogLevel == "" && args.LogLevel == "" {
 		return true
 	}
 
-	logEntrySeverity := logLevelToSeverity[logEntry.Level]
-	logLevelSeverity := logLevelToSeverity[args.LogLevel]
-	minLogLevelSeverity := logLevelToSeverity[args.MinLogLevel]
-	maxLogLevelSeverity := logLevelToSeverity[args.MaxLogLevel]
+	logEntrySeverity := config.LogLevelToSeverity[logEntry.Level]
+	logLevelSeverity := config.LogLevelToSeverity[args.LogLevel]
+	minLogLevelSeverity := config.LogLevelToSeverity[args.MinLogLevel]
+	maxLogLevelSeverity := config.LogLevelToSeverity[args.MaxLogLevel]
 
 	if logLevelSeverity > 0 {
 		return logEntrySeverity == logLevelSeverity
