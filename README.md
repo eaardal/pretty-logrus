@@ -101,6 +101,11 @@ Gotcha 1: You might need to quote the string:
 
 Gotcha 2: it's case sensitive. For example when searching for values with `--highlight-value` like `--highlight-value "my-service*"`, "my-service" will be matched as-is. 
 
+## Commands
+
+- `default-config`: Prints the default configuration file to stdout
+- `init`: Creates a config file at the location `PRETTY_LOGRUS_HOME` is pointing to. It is required to set this environment variable to run this command.
+
 ## Configuration file
 
 See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the configuration file.
