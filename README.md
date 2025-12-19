@@ -122,7 +122,7 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 
 :calendar: 2025-12-19
 
-- :bug: Fix a bug where args where treated like commands.
+- :bug: Fix a bug where args were treated like commands.
 
 ## v1.5.1
 
