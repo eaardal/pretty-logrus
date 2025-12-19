@@ -78,8 +78,10 @@ func main() {
 }
 
 func execCommands() (bool, error) {
+	handled := false
+
 	if len(os.Args) < 2 {
-		return false, nil
+		return handled, nil
 	}
 
 	command := os.Args[1]
@@ -90,6 +92,8 @@ func execCommands() (bool, error) {
 		config := newDefaultConfig()
 		configJson, _ := json.MarshalIndent(config, "", "  ")
 		fmt.Println(string(configJson))
+		handled = true
+		break
 	case "init":
 		if !hasHomeEnvVar() {
 			fmt.Println("Please set PRETTY_LOGRUS_HOME environment variable to initialize config file")
@@ -102,9 +106,9 @@ func execCommands() (bool, error) {
 
 		fmt.Printf("Config file exists at: %s\n", path.Join(homeEnvDir(), configFileName))
 		fmt.Printf("Remember that PRETTY_LOGRUS_HOME environment variable must be set to use this config file. Make sure it's part of your shell config\n")
-	default:
-		return true, fmt.Errorf("unknown command: %s", command)
+		handled = true
+		break
 	}
 
-	return true, nil
+	return handled, nil
 }
