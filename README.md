@@ -112,15 +112,15 @@ that share a field value — typically a trace or transaction id — so you can 
 how a single call travelled across services:
 
 ```shell
-kubectl logs -l "$(podid -l gateway,advertiser,booking)" \
+kubectl logs -l "$(podid -l order,payment,user)" \
   --prefix --all-containers --max-log-requests=50 --since=1h | plr --group-by trace.id
 ```
 
 ```
-══ trace.id=abc123 · 3 lines · api-gateway → booking-api ══
-[api-gateway-…] [info] 2026-06-25T12:00:01Z - received request - transaction.id=[tx-1]
-[booking-api-…]    [info] 2026-06-25T12:00:01.060Z - charge started
-[api-gateway-…] [info] 2026-06-25T12:00:01.200Z - response sent
+══ trace.id=abc123 · 3 lines · order-api → payment-api ══
+[order-api-…] [info] 2026-06-25T12:00:01Z - received request - transaction.id=[tx-1]
+[payment-api-…]    [info] 2026-06-25T12:00:01.060Z - charge started
+[user-api-…] [info] 2026-06-25T12:00:01.200Z - response sent
 ```
 
 The header shows the id, the line count, and the distinct apps the call passed
