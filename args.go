@@ -19,6 +19,7 @@ type Args struct {
 	MinLogLevel    string
 	MaxLogLevel    string
 	AllFields      bool
+	GroupBy        []string
 }
 
 func parseArgs(logLevelToSeverity map[string]int) (*Args, error) {
@@ -31,6 +32,7 @@ func parseArgs(logLevelToSeverity map[string]int) (*Args, error) {
 	args.HighlightKey = parseHighlightKey()
 	args.HighlightValue = parseHighlightValue()
 	args.AllFields = parseAllFieldsArg()
+	args.GroupBy = parseGroupByArg()
 
 	level, err := parseLogLevel(logLevelToSeverity)
 	if err != nil {
@@ -64,6 +66,7 @@ func parseArgs(logLevelToSeverity map[string]int) (*Args, error) {
 		fmt.Printf("    MinLogLevel: %s\n", args.MinLogLevel)
 		fmt.Printf("    MaxLogLevel: %s\n", args.MaxLogLevel)
 		fmt.Printf("    AllFields: %t\n", args.AllFields)
+		fmt.Printf("    GroupBy: %+v\n", args.GroupBy)
 	}
 
 	return args, nil
@@ -71,6 +74,25 @@ func parseArgs(logLevelToSeverity map[string]int) (*Args, error) {
 
 func parseAllFieldsArg() bool {
 	return allFields != nil && *allFields
+}
+
+// parseGroupByArg parses the --group-by flag into an ordered list of field
+// names. The list is treated as one logical grouping key: for each log entry the
+// first present field wins, and entries are grouped by that value so the same id
+// under different field names (e.g. trace.id vs labels.trace.id) groups together.
+func parseGroupByArg() []string {
+	if groupByFlag == nil || *groupByFlag == "" {
+		return nil
+	}
+
+	var fields []string
+	for _, field := range strings.Split(*groupByFlag, ",") {
+		field = strings.TrimSpace(field)
+		if field != "" {
+			fields = append(fields, field)
+		}
+	}
+	return fields
 }
 
 func parseLogLevel(logLevelToSeverity map[string]int) (string, error) {

@@ -103,6 +103,47 @@ usage.
 - `--highlight-value <field value> | -V`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
 - `--all-fields`: Show all data fields regardless of `--except` flag or fields being excluded via `ExcludedFields` in the config file.
 - `--no-pod-id`: Don't prepend the pod ID to each line when reading logs fetched with `kubectl logs -l <selector> --prefix`.
+- `--group-by <field>(,<field>) | -G`: Group log lines by the value of a field and print each group together under a header. See [Grouping by trace](#grouping-by-trace---group-by) below.
+
+### Grouping by trace (`--group-by`)
+
+When you read several apps at once, `--group-by` collects the lines into groups
+that share a field value — typically a trace or transaction id — so you can see
+how a single call travelled across services:
+
+```shell
+kubectl logs -l "$(podid -l gateway,advertiser,booking)" \
+  --prefix --all-containers --max-log-requests=50 --since=1h | plr --group-by trace.id
+```
+
+```
+══ trace.id=abc123 · 3 lines · api-gateway → booking-api ══
+[api-gateway-…] [info] 2026-06-25T12:00:01Z - received request - transaction.id=[tx-1]
+[booking-api-…]    [info] 2026-06-25T12:00:01.060Z - charge started
+[api-gateway-…] [info] 2026-06-25T12:00:01.200Z - response sent
+```
+
+The header shows the id, the line count, and the distinct apps the call passed
+through (derived from the pod names). Lines are ordered by timestamp within each
+group, and groups are ordered by their earliest line.
+
+**Matching the same id under different field names.** Apps don't always agree on
+where they put the trace id — one may log `trace.id`, another `labels.trace.id`.
+Pass them as a comma-separated list and they are treated as **one logical key**:
+the first present field wins, and lines are grouped by the **value**, so the same
+id collapses into one group regardless of which field carried it:
+
+```shell
+plr --group-by trace.id,labels.trace.id
+```
+
+Lines that carry none of the listed fields are collected in a trailing
+`══ ungrouped ══` section. The header label always shows the first field name in
+the list as the canonical name.
+
+> `--group-by` is a **batch** mode: it reads to the end of the input before
+> printing, so it groups a finite log dump rather than a live stream. Don't
+> combine it with `kubectl logs -f`.
 
 ### --trunc examples
 

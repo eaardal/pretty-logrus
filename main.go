@@ -24,6 +24,7 @@ var minLevelFilter = flag.String("min-level", "", "Only show log messages with t
 var maxLevelFilter = flag.String("max-level", "", "Only show log messages with this level or lower")
 var allFields = flag.Bool("all-fields", false, "Show all fields, including excluded ones from config file")
 var noPodID = flag.Bool("no-pod-id", false, "Don't prepend the pod ID to each line when reading kubectl logs fetched with --prefix (e.g. kubectl logs -l <selector> --prefix)")
+var groupByFlag = flag.String("group-by", "", "Group log lines by the value of a field (e.g. --group-by trace.id), printing each group together under a header. Accepts a comma-separated fallback list treated as one logical key (e.g. --group-by trace.id,labels.trace.id). Batch mode: reads to end of input, so not for use with kubectl logs -f")
 
 var flagAliases = map[string]string{
 	"multi-line":      "M",
@@ -31,6 +32,7 @@ var flagAliases = map[string]string{
 	"fields":          "F",
 	"except":          "E",
 	"where":           "W",
+	"group-by":        "G",
 	"highlight-key":   "K",
 	"highlight-value": "V",
 }

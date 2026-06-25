@@ -17,81 +17,66 @@ type LogEntry struct {
 }
 
 func (l *LogEntry) setFromJsonMap(logMap map[string]interface{}, keywords KeywordConfig) {
-	for key, value := range logMap {
-		match := false
+	// Flatten the whole document first so nested objects become dotted field
+	// names (e.g. {"log":{"origin":{"file":{"name":...}}}} -> log.origin.file.name).
+	// Keyword matching then runs against the flattened names, so a keyword like
+	// the ECS "log.level" is recognised whether it arrives nested or pre-dotted.
+	flat := make(map[string]string, len(logMap))
+	flattenJSON(flat, "", logMap)
 
-		for _, levelKeyword := range keywords.LevelKeywords {
-			if strings.ToLower(key) == levelKeyword {
-				l.Level = value.(string)
-				match = true
-				break
-			}
-		}
+	for key, value := range flat {
+		lowerKey := strings.ToLower(key)
 
-		if match {
+		if matchesAnyKeyword(lowerKey, keywords.LevelKeywords) {
+			l.Level = value
 			continue
 		}
 
-		for _, messageKeyword := range keywords.MessageKeywords {
-			if strings.ToLower(key) == messageKeyword {
-				l.Message = value.(string)
-				match = true
-				break
-			}
-		}
-
-		if match {
+		if matchesAnyKeyword(lowerKey, keywords.MessageKeywords) {
+			l.Message = value
 			continue
 		}
 
-		for _, timeKeyword := range keywords.TimestampKeywords {
-			if strings.ToLower(key) == timeKeyword {
-				l.Time = value.(string)
-				match = true
-				break
-			}
-		}
-
-		if match {
+		if matchesAnyKeyword(lowerKey, keywords.TimestampKeywords) {
+			l.Time = value
 			continue
 		}
 
-		for _, errorKeyword := range keywords.ErrorKeywords {
-			if strings.ToLower(key) == errorKeyword {
-				switch val := value.(type) {
-				case string:
-					l.Fields[key] = val
-				case map[string]interface{}:
-					for errKey, errValue := range val {
-						l.Fields[key+"."+errKey] = errValue.(string)
-					}
-				}
-				match = true
-				break
-			}
-		}
-
-		for _, dataFieldKeyword := range keywords.FieldKeywords {
-			if strings.ToLower(key) == dataFieldKeyword {
-				switch val := value.(type) {
-				case string:
-					l.Fields[key] = val
-				case map[string]interface{}:
-					for dataFieldKey, dataFieldValue := range val {
-						l.Fields[key+"."+dataFieldKey] = fmt.Sprintf("%v", dataFieldValue)
-					}
-				}
-				match = true
-				break
-			}
-		}
-
-		if !match {
-			l.Fields[key] = fmt.Sprintf("%v", value)
-		}
+		l.Fields[key] = value
 	}
 
 	l.IsParsed = true
+}
+
+// flattenJSON recursively flattens a decoded JSON object into dst, joining
+// nested object keys with dots. Non-object values (scalars, arrays, null) are
+// stored as their default string form, which preserves how arrays and scalars
+// were rendered before recursive flattening was introduced.
+func flattenJSON(dst map[string]string, prefix string, m map[string]interface{}) {
+	for key, value := range m {
+		fullKey := key
+		if prefix != "" {
+			fullKey = prefix + "." + key
+		}
+
+		if nested, ok := value.(map[string]interface{}); ok {
+			flattenJSON(dst, fullKey, nested)
+			continue
+		}
+
+		dst[fullKey] = fmt.Sprintf("%v", value)
+	}
+}
+
+// matchesAnyKeyword reports whether the (already lower-cased) field name equals
+// one of the configured keywords.
+func matchesAnyKeyword(lowerKey string, keywords []string) bool {
+	for _, keyword := range keywords {
+		if lowerKey == keyword {
+			return true
+		}
+	}
+	return false
 }
 
 func (l *LogEntry) setOriginalLogLine(line []byte) {

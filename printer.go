@@ -17,6 +17,14 @@ func printLogEntries(ctx context.Context, args Args, config Config, logEntries <
 		colorizer = newPodColorizer()
 	}
 
+	// In group mode, entries cannot be printed as they arrive: a group is only
+	// complete at end of input. Buffer the (filtered) entries and render grouped
+	// once the stream closes.
+	if len(args.GroupBy) > 0 {
+		collectAndRenderGroups(ctx, args, config, logEntries, colorizer)
+		return
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -33,17 +41,53 @@ func printLogEntries(ctx context.Context, args Args, config Config, logEntries <
 				continue
 			}
 
-			if !logEntry.IsParsed {
-				println(podPrefix(colorizer, logEntry.PodID) + string(logEntry.OriginalLogLine))
+			printEntry(args, config, logEntry, colorizer)
+		}
+	}
+}
+
+// collectAndRenderGroups buffers every entry that passes the active filters and,
+// once the stream closes, groups them by the configured field(s) and renders the
+// grouped output. This trades streaming for the ability to show a whole trace
+// together, so it is intended for bounded input (kubectl logs without -f).
+func collectAndRenderGroups(ctx context.Context, args Args, config Config, logEntries <-chan *LogEntry, colorizer *PodColorizer) {
+	var buffer []*LogEntry
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case logEntry, ok := <-logEntries:
+			if !ok {
+				groups, ungrouped := groupEntries(buffer, args.GroupBy)
+				renderGroups(args, config, groups, ungrouped, colorizer)
+				return
+			}
+
+			if !shouldShowLogLine(args, config, logEntry) {
+				if isDebug() {
+					fmt.Printf("Not showing log entry %d\n", logEntry.LineNumber)
+				}
 				continue
 			}
 
-			if multiLine != nil && *multiLine {
-				printMultiLine(args, config, logEntry, colorizer)
-			} else {
-				printSingleLine(args, config, logEntry, colorizer)
-			}
+			buffer = append(buffer, logEntry)
 		}
+	}
+}
+
+// printEntry renders a single log entry using the active line format, falling
+// back to the raw line when the entry could not be parsed as JSON.
+func printEntry(args Args, config Config, logEntry *LogEntry, colorizer *PodColorizer) {
+	if !logEntry.IsParsed {
+		println(podPrefix(colorizer, logEntry.PodID) + string(logEntry.OriginalLogLine))
+		return
+	}
+
+	if multiLine != nil && *multiLine {
+		printMultiLine(args, config, logEntry, colorizer)
+	} else {
+		printSingleLine(args, config, logEntry, colorizer)
 	}
 }
 
