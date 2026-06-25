@@ -49,6 +49,45 @@ klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 
 > Note: The `klogs` function does not forward arguments to pod-id. If you need to pass arguments to pod-id, you can use the full command: `kubectl logs $(podid my-app <args here>) | plr`.
 
+#### Reading logs from multiple pods at once
+
+When an app runs several pods you can stream all of their logs together using a
+Kubernetes label selector with `kubectl logs -l <selector> --prefix`. The
+`--prefix` flag makes kubectl prepend `[pod/<podname>/<container>] ` to every
+line; `plr` recognises this prefix, strips it off, and prepends a colored pod ID
+to the prettified output instead. Each pod gets its own color (assigned in the
+order pods first appear) so you can tell at a glance which pod a line came from.
+
+```shell
+kubectl logs -l app=my-service --prefix -f | plr
+```
+
+[pod-id](https://github.com/eaardal/pod-id) can resolve a partial app name into
+the label selector for you with its `-l` flag:
+
+```shell
+kubectl logs -l "$(podid -l my-app)" --prefix -f | plr
+```
+
+A handy function for this:
+
+```bash
+klogsall () {
+  local selector
+  selector=$(podid -l "$1") || return 1
+  shift
+  kubectl logs -l "$selector" --prefix -f | plr "$@"
+}
+
+# Usage:
+klogsall my-app                  # stream logs from every pod of my-app
+klogsall my-app --field trace.id # plr arguments work as expected
+```
+
+Use `--no-pod-id` to suppress the pod ID column. Lines without a kubectl prefix
+are printed unchanged, so this is fully backwards compatible with single-pod
+usage.
+
 ## Options:
 
 - `--multi-line | -M`: Print output on multiple lines with log message and level first and then each data field on separate lines.
@@ -63,6 +102,7 @@ klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 - `--highlight-key <field> | -K`: Highlight the key of the field in the output. Field name can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
 - `--highlight-value <field value> | -V`: Highlight the value of the field in the output. Field value can have leading and/or trailing wildcard `*`. By default, this is displayed in bold red text. Styles can be overridden in the [configuration file](./CONFIG_FILE_SPEC.md).
 - `--all-fields`: Show all data fields regardless of `--except` flag or fields being excluded via `ExcludedFields` in the config file.
+- `--no-pod-id`: Don't prepend the pod ID to each line when reading logs fetched with `kubectl logs -l <selector> --prefix`.
 
 ### --trunc examples
 

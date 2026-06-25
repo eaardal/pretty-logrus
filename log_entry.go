@@ -8,6 +8,7 @@ import (
 type LogEntry struct {
 	LineNumber      int
 	OriginalLogLine []byte
+	PodID           string
 	Time            string
 	Level           string
 	Message         string

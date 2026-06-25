@@ -9,6 +9,14 @@ import (
 )
 
 func printLogEntries(ctx context.Context, args Args, config Config, logEntries <-chan *LogEntry) {
+	// A single colorizer is shared across every entry so each pod keeps a stable
+	// color for the lifetime of the stream. It is owned solely by this goroutine.
+	// A nil colorizer disables the pod label (e.g. --no-pod-id).
+	var colorizer *PodColorizer
+	if noPodID == nil || !*noPodID {
+		colorizer = newPodColorizer()
+	}
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -26,20 +34,30 @@ func printLogEntries(ctx context.Context, args Args, config Config, logEntries <
 			}
 
 			if !logEntry.IsParsed {
-				println(string(logEntry.OriginalLogLine))
+				println(podPrefix(colorizer, logEntry.PodID) + string(logEntry.OriginalLogLine))
 				continue
 			}
 
 			if multiLine != nil && *multiLine {
-				printMultiLine(args, config, logEntry)
+				printMultiLine(args, config, logEntry, colorizer)
 			} else {
-				printSingleLine(args, config, logEntry)
+				printSingleLine(args, config, logEntry, colorizer)
 			}
 		}
 	}
 }
 
-func printSingleLine(args Args, config Config, logEntry *LogEntry) {
+// podPrefix returns the colored, bracketed pod label (with a trailing space) to
+// prepend to a log line, or an empty string when there is no pod to label or
+// the feature is disabled (nil colorizer).
+func podPrefix(colorizer *PodColorizer, podID string) string {
+	if colorizer == nil || podID == "" {
+		return ""
+	}
+	return colorizer.Colorize(podID) + " "
+}
+
+func printSingleLine(args Args, config Config, logEntry *LogEntry, colorizer *PodColorizer) {
 	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
@@ -70,6 +88,7 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 		}
 	}
 
+	prefix := podPrefix(colorizer, logEntry.PodID)
 	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
 	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
 	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
@@ -83,13 +102,13 @@ func printSingleLine(args Args, config Config, logEntry *LogEntry) {
 			fieldsString = excludedFieldsWarning + " " + fieldsString
 		}
 
-		fmt.Printf("[%s] %s - %s - %s\n", level, timestamp, message, fieldsString)
+		fmt.Printf("%s[%s] %s - %s - %s\n", prefix, level, timestamp, message, fieldsString)
 	} else {
-		fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
+		fmt.Printf("%s[%s] %s - %s\n", prefix, level, timestamp, message)
 	}
 }
 
-func printMultiLine(args Args, config Config, logEntry *LogEntry) {
+func printMultiLine(args Args, config Config, logEntry *LogEntry, colorizer *PodColorizer) {
 	var fields []string
 
 	addField := func(fieldName, fieldValue string) {
@@ -120,11 +139,12 @@ func printMultiLine(args Args, config Config, logEntry *LogEntry) {
 		}
 	}
 
+	prefix := podPrefix(colorizer, logEntry.PodID)
 	level := applyLevelStyle(logEntry.Level, config.LevelStyles)
 	timestamp := applyTimestampStyle(logEntry.Time, config.TimestampStyles)
 	message := applyMessageStyle(fmtMessage(args.Truncate, logEntry.Message), config.MessageStyles)
 
-	fmt.Printf("[%s] %s - %s\n", level, timestamp, message)
+	fmt.Printf("%s[%s] %s - %s\n", prefix, level, timestamp, message)
 
 	if len(fields) > 0 {
 		sortedFields := sortFieldsAlphabetically(fields)

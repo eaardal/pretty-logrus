@@ -23,6 +23,7 @@ var highlightValue = flag.String("highlight-value", "", "Highlight the specified
 var minLevelFilter = flag.String("min-level", "", "Only show log messages with this level or higher")
 var maxLevelFilter = flag.String("max-level", "", "Only show log messages with this level or lower")
 var allFields = flag.Bool("all-fields", false, "Show all fields, including excluded ones from config file")
+var noPodID = flag.Bool("no-pod-id", false, "Don't prepend the pod ID to each line when reading kubectl logs fetched with --prefix (e.g. kubectl logs -l <selector> --prefix)")
 
 var flagAliases = map[string]string{
 	"multi-line":      "M",

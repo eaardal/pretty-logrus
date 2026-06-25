@@ -50,16 +50,23 @@ func readAndParseStdin(ctx context.Context, config Config, logEntryCh chan<- *Lo
 }
 
 func parseLogLine(line []byte, lineCount int, config Config) *LogEntry {
+	// kubectl logs --prefix (used to read several pods at once via a label
+	// selector) prepends "[pod/<name>/<container>] " to every line. Strip it off
+	// so the remainder can be parsed as usual, and remember which pod it came
+	// from so the printer can label the output.
+	podID, rest := parsePodPrefix(line)
+
 	logEntry := &LogEntry{
 		LineNumber:      lineCount,
-		OriginalLogLine: line,
+		OriginalLogLine: rest,
+		PodID:           podID,
 		Fields:          make(map[string]string),
 	}
 
 	parsedLogLine := make(map[string]interface{}, 0)
 
-	if err := json.Unmarshal(line, &parsedLogLine); err != nil {
-		logEntry.setOriginalLogLine(line)
+	if err := json.Unmarshal(rest, &parsedLogLine); err != nil {
+		logEntry.setOriginalLogLine(rest)
 	} else {
 		logEntry.setFromJsonMap(parsedLogLine, *config.Keywords)
 	}
