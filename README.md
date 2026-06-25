@@ -158,6 +158,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
 
+## v1.6.0
+
+:calendar: 2026-06-25
+
+- :sparkles: Added support for reading logs from multiple pods at once via `kubectl logs -l <selector> --prefix`. `plr` recognises the kubectl `[pod/<podname>/<container>]` prefix, strips it off, and prepends a colored pod ID to the output so you can tell which pod each line came from. Use `--no-pod-id` to suppress the pod ID column.
+
 ## v1.5.2
 
 :calendar: 2025-12-19
