@@ -32,7 +32,7 @@ This shell alias is useful for combining `podid` and `plr`:
 alias klogs='kubectl logs $(podid $1) | plr'
 ```
 
-To also be able to pass arguments to `plr`, replace the alias with this function: 
+To also be able to pass arguments to `plr`, replace the alias with this function:
 
 ```bash
 klogs () {
@@ -43,7 +43,7 @@ klogs () {
 }
 
 # Usage examples:
-klogs my-app # prints the logs from the pod where the name contains "my-app". 
+klogs my-app # prints the logs from the pod where the name contains "my-app".
 klogs my-app --field trace.id # pretty-logrus arguments work as expected.
 ```
 
@@ -180,7 +180,7 @@ Gotcha 1: You might need to quote the string:
 `--arg labels.* ` might give the output `zsh: no matches found: labels.*` whereas
 `--arg "labels.*"` will filter on fields beginning with the phrase "labels.".
 
-Gotcha 2: it's case sensitive. For example when searching for values with `--highlight-value` like `--highlight-value "my-service*"`, "my-service" will be matched as-is. 
+Gotcha 2: it's case sensitive. For example when searching for values with `--highlight-value` like `--highlight-value "my-service*"`, "my-service" will be matched as-is.
 
 ## Commands
 
@@ -198,6 +198,12 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 > :bug: - Bug fixes  
 > :boom: - Breaking changes  
 > :scissors: - Remove features, deletions
+
+## v1.7.0
+
+:calendar: 2026-06-25
+
+- :sparkles: Added a `--group-by` flag to group log statements by a field's value. For example `--group-by trace.id` to group by a Trace ID if you have that data field.
 
 ## v1.6.0
 
@@ -232,7 +238,7 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 
 :calendar: 2025-04-01
 
-- :sparkles: Added `--min-level` and `--max-level` arguments to specify when you want to show log messages with _at least_ or _at most_ a certain log level severity. The log levels are ordered like this: `trace=1, debug=2, info=3, warning=4, error=5, fatal=6, panic=7`. Use the log level name to specify the argument, like: `--min-level warning`, this would only show log messages with the levels `warning`, `error`, `fatal` and `panic`. 
+- :sparkles: Added `--min-level` and `--max-level` arguments to specify when you want to show log messages with _at least_ or _at most_ a certain log level severity. The log levels are ordered like this: `trace=1, debug=2, info=3, warning=4, error=5, fatal=6, panic=7`. Use the log level name to specify the argument, like: `--min-level warning`, this would only show log messages with the levels `warning`, `error`, `fatal` and `panic`.
 
 ## v1.3.0
 
@@ -295,11 +301,13 @@ See the [configuration spec](./CONFIG_FILE_SPEC.md) for how to set up the config
 - :hammer_and_wrench: A field named `labels` will be treated as a map of other sub-fields and each sub-field under labels will be printed as `labels.<subfield>=[<value>]`. Example:
 
 Before
+
 ```
 labels=[map[string]struct{ foo: "bar", abc: "def" }]
 ```
 
 After
+
 ```
 labels.foo=[bar] labels.abc=[def]
 ```
